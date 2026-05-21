@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -48,7 +48,7 @@
             
             .print-hide, aside, header, .sismat-tabs, .sismat-actions, #toast-container, .md\:hidden { display: none !important; }
             
-            main, #main-content, #budget-panel, #budget-panel > div, .table-container { 
+            main, #main-content, #budget-panel, #budget-panel > div, .table-container, #jornales-print-section { 
                 overflow: visible !important; 
                 height: auto !important; 
                 max-height: none !important;
@@ -64,7 +64,7 @@
             tr { page-break-inside: avoid; page-break-after: auto; }
             th, td { padding: 4px 6px !important; font-size: 9px !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
             th { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; color: #334155 !important; font-weight: bold !important; }
-            input[type="number"] { border: none !important; background: transparent !important; text-align: center; padding: 0; font-size: 10px !important; color: #0f172a !important; }
+            input[type="number"], input[type="text"] { border: none !important; background: transparent !important; text-align: center; padding: 0; font-size: 10px !important; color: #0f172a !important; }
             
             .print-only-header { 
                 display: flex !important; 
@@ -84,10 +84,12 @@
                 background-color: #f8fafc !important; 
                 border: 2px solid #0f172a !important; 
                 color: #0f172a !important; 
-                margin-top: 15px !important; 
-                page-break-inside: avoid !important; 
+                margin-top: 25px !important; 
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
                 -webkit-print-color-adjust: exact; 
-                display: block !important;
+                display: table !important; 
+                width: 100% !important;
                 margin-bottom: 10mm !important;
             }
             #budget-summary-block * { color: #0f172a !important; border-color: #94a3b8 !important; }
@@ -98,7 +100,6 @@
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 print-hide"></div>
 
-    <!-- MODAL DE GUARDADO DE PROYECTO TIPO SISMAT -->
     <div id="save-budget-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex-col items-center justify-center p-4 print-hide backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden fade-in border border-slate-200">
             <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
@@ -151,7 +152,6 @@
         </div>
     </div>
 
-    <!-- Opciones impresión Modal -->
     <div id="print-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm print-hide">
         <div class="bg-white rounded-2xl shadow-2xl w-80 p-6 border border-slate-200 fade-in">
             <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
@@ -178,44 +178,93 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE LOGIN -->
+    <!-- PANTALLA DE LOGIN MEJORADA -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-900 z-50 flex flex-col md:flex-row print-hide overflow-hidden">
-        <div class="hidden md:flex flex-1 bg-gradient-to-tr from-slate-900 via-slate-800 to-emerald-900 p-12 flex-col justify-between text-white relative">
+        
+        <!-- Panel Izquierdo con Imagen y Diseño -->
+        <div class="hidden md:flex flex-1 relative flex-col justify-between text-white p-12">
+            <!-- Imagen de fondo de Paisajismo con superposición oscura -->
+            <div class="absolute inset-0 z-0 bg-slate-900">
+                <img src="portada.png" class="w-full h-full object-cover opacity-80 mix-blend-luminosity" alt="">
+                <div class="absolute inset-0 bg-gradient-to-tr from-slate-950 via-emerald-950/80 to-transparent"></div>
+            </div>
+            
             <div class="relative z-10">
                 <div class="flex items-center gap-4 mb-2">
                     <div class="relative flex items-center justify-center">
-                        <i class="fa-solid fa-leaf text-emerald-500 text-5xl drop-shadow-lg"></i>
-                        <i class="fa-solid fa-gear text-emerald-950 text-[14px] absolute -bottom-1 -right-2 bg-emerald-100 rounded-full border-[3px] border-emerald-900 w-7 h-7 flex items-center justify-center shadow-lg"></i>
+                        <i class="fa-solid fa-leaf text-emerald-400 text-5xl drop-shadow-lg"></i>
                     </div>
                     <span class="text-5xl font-black tracking-tighter text-white drop-shadow-md" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-400">Cot</span></span>
                 </div>
                 <div class="space-y-4 max-w-lg mt-8">
-                    <h2 class="text-3xl font-extrabold leading-tight">Acceso Privado Profesional.</h2>
-                    <p class="text-emerald-100 text-base leading-relaxed">Portal de gestión para constructores y paisajistas. <span class="font-bold text-amber-300">Disfruta de tu lista de rubros maestra y personaliza tus propios costos.</span></p>
+                    <h2 class="text-4xl font-extrabold leading-tight text-white drop-shadow-md">Presupuestos profesionales de paisajismo.</h2>
+                    <p class="text-emerald-100 text-lg leading-relaxed drop-shadow">La herramienta definitiva para el sector. Calculá materiales, mano de obra y ajustá tus costos por inflación en segundos.</p>
                 </div>
             </div>
+            <div class="relative z-10">
+                <p class="text-xs text-emerald-400 font-medium tracking-wider uppercase drop-shadow-md">© VerdeCot Software</p>
+            </div>
         </div>
-        <div class="flex-1 bg-slate-950 flex items-center justify-center p-6 relative">
-            <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl">
-                <div class="text-center mb-6">
-                    <h3 class="text-2xl font-bold text-slate-800" id="auth-title">Iniciar Sesión</h3>
-                </div>
+        
+        <!-- Panel Derecho (Formulario Amigable) -->
+        <div class="flex-1 bg-slate-50 flex items-center justify-center p-6 sm:p-12 relative overflow-y-auto">
+            <div class="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-slate-200">
+                
                 <div id="login-form-section">
+                    <div class="text-center mb-8">
+                        <div class="md:hidden flex items-center justify-center gap-2 mb-6">
+                            <i class="fa-solid fa-leaf text-emerald-500 text-4xl"></i>
+                            <span class="text-3xl font-black text-slate-800" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-500">Cot</span></span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-800" id="auth-title">Iniciar Sesión</h3>
+                        <p class="text-sm text-slate-500 mt-2 font-medium" id="auth-subtitle">Ingresá a tu cuenta para ver tus proyectos.</p>
+                    </div>
+                    
                     <div class="space-y-4">
-                        <input type="email" id="auth-email" placeholder="Correo electrónico" class="w-full border border-slate-300 rounded-lg py-3 px-4 text-sm outline-none focus:border-emerald-500">
-                        <input type="password" id="auth-password" placeholder="Contraseña" class="w-full border border-slate-300 rounded-lg py-3 px-4 text-sm outline-none focus:border-emerald-500">
-                        <button id="btn-auth-action" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all shadow-md mt-2">Validar Credenciales</button>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tu Email</label>
+                            <input type="email" id="auth-email" placeholder="ejemplo@correo.com" class="w-full border border-slate-300 rounded-xl py-3 px-4 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all text-slate-700 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Contraseña</label>
+                            <input type="password" id="auth-password" placeholder="••••••••" class="w-full border border-slate-300 rounded-xl py-3 px-4 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all text-slate-700 font-medium">
+                        </div>
+                        
+                        <button id="btn-auth-action" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/30 mt-4 text-sm flex justify-center items-center gap-2">
+                            Ingresar a mi cuenta
+                        </button>
+                    </div>
+
+                    <div class="mt-6 flex flex-col gap-3">
+                        <div class="relative flex items-center py-2">
+                            <div class="flex-grow border-t border-slate-200"></div>
+                            <span class="flex-shrink-0 mx-4 text-xs font-bold text-slate-400 uppercase">O también podés</span>
+                            <div class="flex-grow border-t border-slate-200"></div>
+                        </div>
+                        
+                        <button onclick="app.handleDemoLogin()" class="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-eye text-emerald-600"></i> Probar Demo Gratis
+                        </button>
+                    </div>
+
+                    <div class="mt-8 text-center border-t border-slate-100 pt-6">
+                        <p class="text-sm text-slate-600 font-medium">
+                            <span id="auth-toggle-text">¿Todavía no tenés cuenta?</span> 
+                            <button id="btn-toggle-auth" class="text-emerald-600 font-bold hover:text-emerald-800 transition-colors ml-1">Registrate gratis</button>
+                        </p>
                     </div>
                 </div>
-                <div id="welcome-back-section" class="hidden space-y-6 text-center py-4">
-                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 mb-2 ring-4 ring-emerald-50" id="welcome-icon-container">
-                        <i class="fa-solid fa-user-shield text-3xl" id="welcome-icon"></i>
+
+                <div id="welcome-back-section" class="hidden space-y-6 text-center py-8">
+                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-100 text-emerald-600 mb-2 ring-8 ring-emerald-50" id="welcome-icon-container">
+                        <i class="fa-solid fa-user-check text-4xl" id="welcome-icon"></i>
                     </div>
                     <div>
-                        <p id="user-email-display" class="text-lg font-bold text-slate-800 truncate px-4"></p>
-                        <p id="trial-status-text" class="text-xs font-bold text-amber-600 mt-1"></p>
+                        <h3 class="text-2xl font-bold text-slate-800">¡Hola de nuevo!</h3>
+                        <p id="user-email-display" class="text-sm font-medium text-slate-500 mt-1 truncate px-4"></p>
+                        <p id="trial-status-text" class="text-xs font-bold text-emerald-800 mt-3 bg-emerald-100 inline-block px-4 py-1.5 rounded-full uppercase tracking-wider"></p>
                     </div>
-                    <button onclick="app.enterPortal()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-base">
+                    <button onclick="app.enterPortal()" class="w-full py-4 mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg flex justify-center items-center gap-2 text-base">
                         Entrar al Sistema <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
@@ -223,27 +272,28 @@
         </div>
     </div>
 
-    <!-- HEADER -->
     <header class="bg-emerald-50 border-b border-emerald-200 shadow-sm z-10 flex flex-col print-hide relative">
         <div class="px-5 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-8">
+            <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('panel')">
                     <div class="relative flex items-center justify-center mr-1">
                         <i class="fa-solid fa-leaf text-emerald-600 text-3xl drop-shadow-sm"></i>
                         <i class="fa-solid fa-gear text-emerald-950 text-[10px] absolute -bottom-0.5 -right-1.5 bg-emerald-50 rounded-full border-2 border-emerald-200 w-[18px] h-[18px] flex items-center justify-center"></i>
                     </div>
-                    <h1 class="text-3xl font-black tracking-tighter" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-500">Cot</span></h1>
+                    <h1 class="text-3xl font-black tracking-tighter hidden lg:block" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-500">Cot</span></h1>
                 </div>
                 
-                <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
+                <nav class="hidden md:flex gap-5 text-[13px] font-bold text-emerald-900/60 ml-2">
                     <button onclick="app.navigate('panel')" id="nav-panel" class="text-emerald-700 transition-colors">Panel Principal</button>
                     <button onclick="app.navigate('computo')" id="nav-computo" class="hover:text-emerald-700 transition-colors">Cómputo</button>
-                    <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Costos</button>
+                    <button onclick="app.navigate('jornales')" id="nav-jornales" class="hover:text-emerald-700 transition-colors">Jornales</button>
+                    <button onclick="app.navigate('gastos')" id="nav-gastos" class="hover:text-emerald-700 transition-colors">Gastos</button>
+                    <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Precios</button>
                     <button onclick="app.navigate('indices')" id="nav-indices" class="hover:text-emerald-700 transition-colors">Índices</button>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
-                <div id="user-badge" class="bg-emerald-100 px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-800 uppercase tracking-wider hidden md:flex items-center gap-2 border border-emerald-200 shadow-sm">
+                <div id="user-badge" class="bg-emerald-100 px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-800 uppercase tracking-wider hidden lg:flex items-center gap-2 border border-emerald-200 shadow-sm">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span> Conectando...
                 </div>
                 
@@ -276,16 +326,17 @@
         </div>
     </header>
 
-    <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm">
-        <button onclick="app.navigate('panel')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-chart-pie mb-1 text-sm block"></i> Panel</button>
-        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
-        <button onclick="app.navigate('database')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Costos</button>
+    <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm hide-scroll">
+        <button onclick="app.navigate('panel')" class="flex-none py-3 px-4 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-chart-pie mb-1 text-sm block"></i> Panel</button>
+        <button onclick="app.navigate('computo')" class="flex-none py-3 px-4 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
+        <button onclick="app.navigate('jornales')" class="flex-none py-3 px-4 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-users-gear mb-1 text-sm block"></i> Jornales</button>
+        <button onclick="app.navigate('gastos')" class="flex-none py-3 px-4 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-receipt mb-1 text-sm block"></i> Gastos</button>
+        <button onclick="app.navigate('database')" class="flex-none py-3 px-4 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Precios</button>
     </div>
 
     <main id="main-content" class="flex-1 w-full flex flex-col md:flex-row overflow-hidden bg-[#f4f7f6]">
     </main>
 
-    <!-- VISTA PANEL PRINCIPAL -->
     <template id="view-panel">
         <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
             <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
@@ -332,7 +383,6 @@
         </div>
     </template>
 
-    <!-- VISTA CÓMPUTO -->
     <template id="view-computo">
         <div class="flex flex-col md:flex-row w-full h-full fade-in">
             <div class="w-full md:w-[320px] bg-white border-r border-slate-200 flex flex-col h-1/2 md:h-full z-0 shadow-sm print-hide">
@@ -352,19 +402,25 @@
             <div class="flex-1 flex flex-col p-4 md:p-6 h-full overflow-hidden">
                 <div id="budget-panel" class="bg-white border border-slate-200 shadow-sm rounded-2xl flex-1 flex flex-col overflow-hidden">
                     
-                    <div class="border-b border-slate-200 flex px-4 pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide bg-slate-50">
-                        <div class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
-                            <i class="fa-solid fa-file-invoice"></i> Hoja de Presupuesto <span id="current-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
-                        </div>
+                    <div class="border-b border-slate-200 flex px-4 pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide bg-slate-50 overflow-x-auto hide-scroll whitespace-nowrap">
+                        <button onclick="app.navigate('computo')" class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
+                            <i class="fa-solid fa-file-invoice"></i> Cómputo Principal <span id="current-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
+                        </button>
+                        <button onclick="app.navigate('jornales')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                            <i class="fa-solid fa-users-gear"></i> Jornales
+                        </button>
+                        <button onclick="app.navigate('gastos')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                            <i class="fa-solid fa-receipt"></i> Gastos y Rentabilidad
+                        </button>
                     </div>
 
                     <div class="p-4 flex-1 flex flex-col overflow-hidden">
                         <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 sismat-actions print-hide">
-                            <div class="flex bg-slate-100 p-1 rounded-xl text-[10px] md:text-xs font-bold text-slate-600 w-full xl:w-auto" id="mode-buttons">
-                                <button onclick="app.setViewMode('TOTAL')" id="btn-mode-TOTAL" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm">TOTAL</button>
-                                <button onclick="app.setViewMode('MATERIALES')" id="btn-mode-MATERIALES" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">MATERIALES</button>
-                                <button onclick="app.setViewMode('MANO DE OBRA')" id="btn-mode-MANO DE OBRA" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">M. OBRA</button>
-                                <button onclick="app.setViewMode('PLANILLA')" id="btn-mode-PLANILLA" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">PLANILLA</button>
+                            <div class="flex bg-slate-100 p-1 rounded-xl text-[10px] md:text-xs font-bold text-slate-600 w-full xl:w-auto overflow-x-auto hide-scroll" id="mode-buttons">
+                                <button onclick="app.setViewMode('TOTAL')" id="btn-mode-TOTAL" class="flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm">TOTAL</button>
+                                <button onclick="app.setViewMode('MATERIALES')" id="btn-mode-MATERIALES" class="flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">MATERIALES</button>
+                                <button onclick="app.setViewMode('MANO DE OBRA')" id="btn-mode-MANO DE OBRA" class="flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">M. OBRA</button>
+                                <button onclick="app.setViewMode('PLANILLA')" id="btn-mode-PLANILLA" class="flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">PLANILLA</button>
                             </div>
                             <div class="flex gap-2 w-full xl:w-auto justify-end flex-wrap">
                                 <button onclick="app.clearProject()" class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-all"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
@@ -373,7 +429,6 @@
                             </div>
                         </div>
 
-                        <!-- CABECERA PARA IMPRESIÓN -->
                         <div id="print-header-block" class="print-only-header">
                             <div class="flex items-center gap-5">
                                 <img id="print-logo-img" src="" style="max-height: 60px; display: none;">
@@ -388,7 +443,6 @@
                             </div>
                         </div>
 
-                        <!-- Tabla -->
                         <div class="flex-1 overflow-auto border border-slate-200 rounded-xl custom-scrollbar bg-white table-container shadow-sm">
                             <table class="w-full text-xs text-left min-w-[700px] border-collapse">
                                 <thead id="table-header" class="bg-[#f8fafc] text-slate-500 font-bold sticky top-0 z-10 shadow-sm border-b border-slate-200"></thead>
@@ -396,7 +450,6 @@
                             </table>
                         </div>
 
-                        <!-- Bloque de Totales -->
                         <div id="budget-summary-block" class="bg-emerald-800 text-white mt-4 rounded-xl flex flex-col items-end justify-center p-6 shadow-md">
                             <div class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2">
                                 <span class="flex-1 text-right pr-4">Materiales</span>
@@ -418,14 +471,182 @@
         </div>
     </template>
 
-    <!-- VISTA DATABASE -->
+    <!-- NUEVA VISTA JORNALES -->
+    <template id="view-jornales">
+        <div class="w-full h-full fade-in p-4 md:p-6 overflow-y-auto" id="jornales-print-section">
+            <div class="max-w-6xl mx-auto">
+                <div class="border-b border-slate-200 flex pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide mb-4 overflow-x-auto hide-scroll whitespace-nowrap">
+                    <button onclick="app.navigate('computo')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                        <i class="fa-solid fa-file-invoice"></i> Cómputo Principal
+                    </button>
+                    <button onclick="app.navigate('jornales')" class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
+                        <i class="fa-solid fa-users-gear"></i> Jornales <span id="jornales-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
+                    </button>
+                    <button onclick="app.navigate('gastos')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                        <i class="fa-solid fa-receipt"></i> Gastos y Rentabilidad
+                    </button>
+                </div>
+                
+                <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col overflow-hidden mb-8">
+                    <div class="bg-slate-800 text-white p-5 flex flex-col sm:flex-row justify-between items-center sismat-actions gap-4">
+                        <h2 class="font-bold text-lg"><i class="fa-solid fa-users-gear mr-2 text-slate-400"></i> Planilla de Jornales y Personal</h2>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="app.addJornal()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Añadir Personal</button>
+                            <button onclick="app.printJornales()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-print mr-1"></i> Imprimir Planilla</button>
+                        </div>
+                    </div>
+                    <div class="p-0 sm:p-5">
+                        <div class="overflow-x-auto table-container">
+                            <table class="w-full text-sm text-left border-collapse min-w-[600px]">
+                                <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
+                                    <tr>
+                                        <th class="p-3">Nombre del Operario/a</th>
+                                        <th class="p-3">Rol / Especialidad</th>
+                                        <th class="p-3 text-center w-28">Días Obra</th>
+                                        <th class="p-3 text-right w-36">Jornal Diario ($)</th>
+                                        <th class="p-3 text-right w-36">Subtotal ($)</th>
+                                        <th class="p-3 text-center w-12 sismat-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="jornales-table" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 p-4 sm:p-0 flex justify-end print-only-header" style="display: flex;">
+                            <div class="bg-slate-50 sm:bg-emerald-50 border border-slate-200 sm:border-emerald-200 p-4 sm:p-5 rounded-2xl flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end shadow-sm">
+                                <span class="text-sm font-bold text-slate-600 sm:text-emerald-800 uppercase tracking-wider">Total Jornales:</span>
+                                <span class="text-2xl font-black text-slate-800 sm:text-emerald-900" id="total-jornales-display">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- NUEVA VISTA GASTOS -->
+    <template id="view-gastos">
+        <div class="w-full h-full fade-in p-4 md:p-6 overflow-y-auto">
+            <div class="max-w-6xl mx-auto space-y-4">
+                <div class="border-b border-slate-200 flex pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide mb-4 overflow-x-auto hide-scroll whitespace-nowrap">
+                    <button onclick="app.navigate('computo')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                        <i class="fa-solid fa-file-invoice"></i> Cómputo Principal
+                    </button>
+                    <button onclick="app.navigate('jornales')" class="flex items-center gap-2 border-b-2 border-transparent hover:border-slate-300 text-slate-500 hover:text-slate-700 pb-2 px-2 font-medium transition-colors">
+                        <i class="fa-solid fa-users-gear"></i> Jornales
+                    </button>
+                    <button onclick="app.navigate('gastos')" class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
+                        <i class="fa-solid fa-receipt"></i> Gastos y Rentabilidad <span id="gastos-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
+                    </button>
+                </div>
+
+                <div class="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden mb-8">
+                    <div class="bg-slate-800 text-white p-5 flex justify-between items-center">
+                        <h2 class="font-bold text-lg"><i class="fa-solid fa-calculator mr-2 text-slate-400"></i> Calculadora de Gastos y Rentabilidad Estimada</h2>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 bg-slate-50/50">
+                        
+                        <!-- Columna Gastos -->
+                        <div class="space-y-6">
+                            <!-- Combustible -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><i class="fa-solid fa-gas-pump text-emerald-600"></i> Gastos de Combustible</h3>
+                                <p class="text-xs text-slate-500 mb-5 font-medium">Cálculo estimado base: 1 Litro cada 10 Km recorridos.</p>
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Precio x Litro ($)</label>
+                                        <input type="number" id="gasto-precioCombustible" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 font-bold text-slate-800 bg-slate-50 focus:bg-white transition-colors" onchange="app.updateGasto('precioCombustible', this.value)">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Km por Día (Ida/Vuelta)</label>
+                                        <input type="number" id="gasto-kmDia" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 font-bold text-slate-800 bg-slate-50 focus:bg-white transition-colors" onchange="app.updateGasto('kmDia', this.value)">
+                                    </div>
+                                </div>
+                                <div class="mb-5">
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Días de Obra Estimados</label>
+                                    <input type="number" id="gasto-diasObra" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 font-bold text-slate-800 bg-slate-50 focus:bg-white transition-colors" onchange="app.updateGasto('diasObra', this.value)">
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex justify-between items-center bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-2xl">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Subtotal Combustible:</span>
+                                    <span class="text-xl font-black text-slate-800" id="subtotal-combustible">$0</span>
+                                </div>
+                            </div>
+
+                            <!-- Otros Gastos -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2"><i class="fa-solid fa-receipt text-emerald-600"></i> Otros Gastos Operativos</h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center gap-3">
+                                        <label class="w-36 text-xs font-bold text-slate-600 uppercase tracking-wider">Peajes</label>
+                                        <input type="number" id="gasto-peajes" class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 text-right font-bold text-slate-800 bg-slate-50 focus:bg-white" onchange="app.updateGasto('peajes', this.value)">
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <label class="w-36 text-xs font-bold text-slate-600 uppercase tracking-wider">Fletes / Envíos</label>
+                                        <input type="number" id="gasto-fletes" class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 text-right font-bold text-slate-800 bg-slate-50 focus:bg-white" onchange="app.updateGasto('fletes', this.value)">
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <label class="w-36 text-xs font-bold text-slate-600 uppercase tracking-wider">Herramientas</label>
+                                        <input type="number" id="gasto-herramientas" class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 text-right font-bold text-slate-800 bg-slate-50 focus:bg-white" onchange="app.updateGasto('herramientas', this.value)">
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <label class="w-36 text-xs font-bold text-slate-600 uppercase tracking-wider">Viáticos / Admin</label>
+                                        <input type="number" id="gasto-admin" class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 text-right font-bold text-slate-800 bg-slate-50 focus:bg-white" onchange="app.updateGasto('admin', this.value)">
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <label class="w-36 text-xs font-bold text-slate-600 uppercase tracking-wider">Imprevistos</label>
+                                        <input type="number" id="gasto-otros" class="flex-1 border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 text-right font-bold text-slate-800 bg-slate-50 focus:bg-white" onchange="app.updateGasto('otros', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Rentabilidad -->
+                        <div class="flex flex-col gap-4">
+                            <div class="bg-slate-900 rounded-2xl p-6 lg:p-8 flex-1 flex flex-col justify-center relative overflow-hidden shadow-xl">
+                                <!-- Deco -->
+                                <i class="fa-solid fa-chart-line absolute -right-6 -top-6 text-8xl text-slate-800 opacity-50 transform rotate-12"></i>
+                                
+                                <h3 class="text-center font-black text-emerald-400 uppercase tracking-widest text-sm mb-8 relative z-10">Proyección de Rentabilidad</h3>
+                                
+                                <div class="space-y-5 mb-8 relative z-10">
+                                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-3">
+                                        <span class="text-sm font-semibold text-slate-300">1. Total Presupuesto (Ingreso)</span>
+                                        <span class="text-base font-black text-white" id="renta-ingreso">$0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-3">
+                                        <span class="text-sm font-semibold text-slate-400">2. Costo Materiales Presupuestados</span>
+                                        <span class="text-sm font-bold text-red-400" id="renta-materiales">-$0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-3">
+                                        <span class="text-sm font-semibold text-slate-400">3. Total Planilla Jornales</span>
+                                        <span class="text-sm font-bold text-red-400" id="renta-jornales">-$0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-3">
+                                        <span class="text-sm font-semibold text-slate-400">4. Total Gastos Extras</span>
+                                        <span class="text-sm font-bold text-red-400" id="renta-gastos">-$0</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-emerald-500 rounded-xl p-6 text-center mt-auto shadow-lg relative z-10">
+                                    <p class="text-emerald-950 text-xs font-black uppercase tracking-widest mb-1.5 opacity-80">Utilidad Limpia Estimada</p>
+                                    <p class="text-4xl font-black text-white drop-shadow-sm" id="renta-utilidad">$0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <template id="view-database">
         <div class="p-4 md:p-6 w-full h-full fade-in max-w-5xl mx-auto">
             <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
                 <div class="bg-slate-800 p-5 text-white flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-database text-sm"></i></div>
-                        <h2 class="font-bold text-lg" id="db-title-display">Mis Costos Maestros</h2>
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-tags text-sm"></i></div>
+                        <h2 class="font-bold text-lg" id="db-title-display">Mis Precios Maestros</h2>
                     </div>
                     <div class="relative flex-1 sm:w-64 text-slate-800">
                         <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
@@ -438,8 +659,8 @@
                             <tr>
                                 <th class="p-4">Descripción del Ítem</th>
                                 <th class="p-4 text-center">Und.</th>
-                                <th class="p-4 text-right w-32">Material ($)</th>
-                                <th class="p-4 text-right w-32">M. Obra ($)</th>
+                                <th class="p-4 text-right w-32">Precio Material ($)</th>
+                                <th class="p-4 text-right w-32">Precio M. Obra ($)</th>
                             </tr>
                         </thead>
                         <tbody id="db-items-table" class="divide-y divide-slate-100"></tbody>
@@ -449,7 +670,6 @@
         </div>
     </template>
 
-    <!-- VISTA INDICES -->
     <template id="view-indices">
         <div class="p-4 md:p-8 w-full max-w-2xl mx-auto h-full overflow-y-auto fade-in flex items-center justify-center">
             <div class="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden w-full">
@@ -476,7 +696,6 @@
         </div>
     </template>
 
-    <!-- VISTA PERFIL -->
     <template id="view-perfil">
         <div class="w-full h-full overflow-y-auto bg-transparent fade-in">
             <div class="bg-white border-b border-slate-200 p-6 md:px-10 md:py-8 shadow-sm">
@@ -531,7 +750,6 @@
         const db = getFirestore(appInstance); 
         const appId = 'verdecot-app';
 
-        // Catálogo súper completo (Actualizado con todas las tareas)
         const INITIAL_CATALOG = [
             { id: '101', category: '01 - Trabajos Preliminares', name: 'Limpieza y nivelación de terreno', unit: 'M2', matPrice: 0, laborPrice: 1500 },
             { id: '102', category: '01 - Trabajos Preliminares', name: 'Obrador, depósito y sanitario', unit: 'U', matPrice: 141882, laborPrice: 0 },
@@ -572,7 +790,13 @@
             user: null, 
             userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '' },
             database: [], 
-            currentProject: { items: [], loadedId: null, title: '' }, 
+            currentProject: { 
+                items: [], 
+                jornales: [], 
+                gastos: { precioCombustible: 1000, kmDia: 0, diasObra: 1, peajes: 0, fletes: 0, herramientas: 0, admin: 0, otros: 0 },
+                loadedId: null, 
+                title: '' 
+            }, 
             savedBudgets: [], 
             expandedCategories: { '01 - Trabajos Preliminares': true }, 
             viewMode: 'TOTAL', 
@@ -628,18 +852,55 @@
             
             bindAuthEvents: function() { 
                 const btnAction = document.getElementById('btn-auth-action'); 
+                const btnToggle = document.getElementById('btn-toggle-auth');
+                
+                if (btnToggle) {
+                    btnToggle.onclick = () => {
+                        this.isLoginMode = !this.isLoginMode;
+                        document.getElementById('auth-title').textContent = this.isLoginMode ? 'Iniciar Sesión' : 'Crear Cuenta Nueva';
+                        document.getElementById('auth-subtitle').textContent = this.isLoginMode ? 'Ingresá a tu cuenta para ver tus proyectos.' : 'Registrate gratis para guardar tus cómputos y base de datos.';
+                        document.getElementById('btn-auth-action').innerHTML = this.isLoginMode ? 'Ingresar a mi cuenta' : 'Registrarme ahora';
+                        document.getElementById('auth-toggle-text').textContent = this.isLoginMode ? '¿Todavía no tenés cuenta?' : '¿Ya tenés una cuenta?';
+                        btnToggle.textContent = this.isLoginMode ? 'Registrate gratis' : 'Iniciá Sesión';
+                    };
+                }
+
                 if(btnAction) { 
                     btnAction.onclick = async () => { 
                         const e = document.getElementById('auth-email').value; 
                         const p = document.getElementById('auth-password').value; 
-                        if(!e || !p) return; 
+                        if(!e || !p) { this.showToast('Por favor, completá tu email y contraseña.'); return; }
+                        
+                        btnAction.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+                        
                         try { 
-                            if(this.isLoginMode) await signInWithEmailAndPassword(auth, e, p); 
-                            else await createUserWithEmailAndPassword(auth, e, p); 
-                        } catch(err) { this.showToast('Error al iniciar.'); } 
+                            if(this.isLoginMode) {
+                                await signInWithEmailAndPassword(auth, e, p); 
+                            } else {
+                                await createUserWithEmailAndPassword(auth, e, p);
+                                this.showToast('¡Cuenta creada exitosamente!');
+                            }
+                        } catch(err) { 
+                            console.error(err);
+                            let msg = 'Ocurrió un error al ingresar.';
+                            if(err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = 'El email o la contraseña son incorrectos.';
+                            if(err.code === 'auth/email-already-in-use') msg = 'Ese email ya está registrado. Ingresá a tu cuenta.';
+                            if(err.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
+                            this.showToast(msg); 
+                            btnAction.innerHTML = this.isLoginMode ? 'Ingresar a mi cuenta' : 'Registrarme ahora';
+                        } 
                     }; 
                 } 
             },
+
+            handleDemoLogin: async function() {
+                try {
+                    await signInAnonymously(auth);
+                } catch(err) {
+                    this.showToast('Error al iniciar modo demo.');
+                }
+            },
+
             signOut: function() { signOut(auth); },
 
             navigate: function(viewId) {
@@ -648,11 +909,13 @@
                 if (!template) return;
                 content.innerHTML = template.innerHTML;
                 
-                ['panel','computo','database','indices'].forEach(id => {
+                ['panel','computo','jornales','gastos','database','indices'].forEach(id => {
                     const btn = document.getElementById(`nav-${id}`);
                     if(btn) btn.className = id === viewId ? "text-emerald-800 font-black transition-colors border-b-[3px] border-emerald-600 pb-1" : "text-emerald-900/60 hover:text-emerald-700 font-bold transition-colors pb-1";
                 });
                 
+                const titleStr = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
+
                 if (viewId === 'panel') { 
                     const n = this.userProfile.name ? this.userProfile.name.split(' ')[0] : 'Profesional';
                     document.getElementById('panel-welcome-name').textContent = `¡Hola, ${n}!`;
@@ -662,7 +925,17 @@
                     this.renderCatalog(''); 
                     this.renderProjectTable(); 
                     const wsName = document.getElementById('current-workspace-name');
-                    if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
+                    if(wsName) wsName.textContent = titleStr;
+                }
+                if (viewId === 'jornales') {
+                    this.renderJornales();
+                    const wsName = document.getElementById('jornales-workspace-name');
+                    if(wsName) wsName.textContent = titleStr;
+                }
+                if (viewId === 'gastos') {
+                    this.renderGastos();
+                    const wsName = document.getElementById('gastos-workspace-name');
+                    if(wsName) wsName.textContent = titleStr;
                 }
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
@@ -693,18 +966,15 @@
             },
 
             // --- DATABASE & INDICES ---
-            // AQUÍ ESTABA EL ERROR. Ahora lee exclusivamente del perfil del usuario, evitando conflictos.
             loadDatabase: function() {
                 if (!this.user) return;
                 const catRef = collection(db, 'artifacts', appId, 'users', this.user.uid, 'catalog');
                 onSnapshot(catRef, async (snap) => {
                     if (snap.empty) { 
-                        // Si está vacío, le cargamos toda la lista inicial al usuario
                         const batch = writeBatch(db); 
                         INITIAL_CATALOG.forEach(i => batch.set(doc(catRef, i.id), i)); 
                         await batch.commit(); 
                     } else {
-                        // Si ya tiene datos, los cargamos
                         this.database = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b)=>a.category.localeCompare(b.category));
                         if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search')?.value || '');
                         if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
@@ -716,7 +986,7 @@
                 if(!this.user) return; 
                 const num = parseFloat(val)||0;
                 const item = this.database.find(i=>i.id === id);
-                if(item) item[f] = num; // Actualiza visual
+                if(item) item[f] = num;
                 try { 
                     await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'catalog', id), { [f]: num }, { merge: true }); 
                 } catch(e){} 
@@ -752,31 +1022,51 @@
                     if(s.exists()) { 
                         const data = s.data();
                         this.currentProject.items = data.items || []; 
+                        this.currentProject.jornales = data.jornales || [];
+                        this.currentProject.gastos = data.gastos || { precioCombustible: 1000, kmDia: 0, diasObra: 1, peajes: 0, fletes: 0, herramientas: 0, admin: 0, otros: 0 };
                         this.currentProject.loadedId = data.loadedId || null;
                         this.currentProject.title = data.title || '';
+                        
                         if(document.getElementById('project-items-table')) this.renderProjectTable(); 
+                        if(document.getElementById('jornales-table')) this.renderJornales();
+                        if(document.getElementById('gasto-precioCombustible')) this.renderGastos();
                     } 
                 }); 
             },
             autoSaveDraft: async function() {
                 if(!this.user) return;
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title }); } catch(e){}
+                try { 
+                    await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { 
+                        items: this.currentProject.items, 
+                        jornales: this.currentProject.jornales,
+                        gastos: this.currentProject.gastos,
+                        loadedId: this.currentProject.loadedId, 
+                        title: this.currentProject.title 
+                    }); 
+                } catch(e){}
             },
             clearProject: function() {
-                if(confirm('¿Estás seguro de limpiar la hoja de presupuesto? Empezarás desde cero.')) {
+                if(confirm('¿Estás seguro de limpiar el proyecto actual? Se borrará el cómputo, jornales y gastos.')) {
                     this.currentProject.items = [];
+                    this.currentProject.jornales = [];
+                    this.currentProject.gastos = { precioCombustible: 1000, kmDia: 0, diasObra: 1, peajes: 0, fletes: 0, herramientas: 0, admin: 0, otros: 0 };
                     this.currentProject.loadedId = null;
                     this.currentProject.title = '';
                     this.autoSaveDraft();
+                    
                     this.renderProjectTable();
                     this.renderCatalog(document.getElementById('item-search')?.value || '');
+                    
                     const wsName = document.getElementById('current-workspace-name');
                     if(wsName) wsName.textContent = '(Borrador sin guardar)';
-                    this.showToast('Presupuesto en blanco.');
+                    
+                    this.showToast('Proyecto en blanco.');
                 }
             },
             clearProjectAndNavigate: function() {
                 this.currentProject.items = [];
+                this.currentProject.jornales = [];
+                this.currentProject.gastos = { precioCombustible: 1000, kmDia: 0, diasObra: 1, peajes: 0, fletes: 0, herramientas: 0, admin: 0, otros: 0 };
                 this.currentProject.loadedId = null;
                 this.currentProject.title = '';
                 this.autoSaveDraft();
@@ -819,6 +1109,8 @@
                     phone: document.getElementById('save-phone').value.trim(),
                     notes: document.getElementById('save-notes').value.trim(),
                     items: this.currentProject.items,
+                    jornales: this.currentProject.jornales,
+                    gastos: this.currentProject.gastos,
                     totalMat: totalMat,
                     totalMo: totalMo,
                     totalGeneral: totalMat + totalMo,
@@ -833,7 +1125,7 @@
                     this.currentProject.title = title;
                     await this.autoSaveDraft();
                     this.closeSaveModal();
-                    this.showToast('Cómputo guardado exitosamente.');
+                    this.showToast('Proyecto guardado exitosamente.');
                     const wsName = document.getElementById('current-workspace-name');
                     if(wsName) wsName.textContent = `(${title})`;
                 } catch(e) {
@@ -871,6 +1163,8 @@
                 const b = this.savedBudgets.find(x => x.id === projId);
                 if(!b) return;
                 this.currentProject.items = b.items || [];
+                this.currentProject.jornales = b.jornales || [];
+                this.currentProject.gastos = b.gastos || { precioCombustible: 1000, kmDia: 0, diasObra: 1, peajes: 0, fletes: 0, herramientas: 0, admin: 0, otros: 0 };
                 this.currentProject.loadedId = b.id;
                 this.currentProject.title = b.title;
                 this.autoSaveDraft();
@@ -882,13 +1176,17 @@
                 document.getElementById('save-notes').value = b.notes || '';
 
                 this.navigate('computo');
-                this.showToast('Cómputo cargado.');
+                this.showToast('Proyecto cargado completo.');
             },
             deleteSavedBudget: async function(projId) {
                 if(!confirm('¿Eliminar definitivamente este presupuesto guardado?')) return;
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'savedBudgets', projId));
-                    if(this.currentProject.loadedId === projId) { this.currentProject.loadedId = null; this.currentProject.title = ''; this.autoSaveDraft(); }
+                    if(this.currentProject.loadedId === projId) { 
+                        this.currentProject.loadedId = null; 
+                        this.currentProject.title = ''; 
+                        this.autoSaveDraft(); 
+                    }
                     this.showToast('Presupuesto eliminado.');
                 } catch(e){}
             },
@@ -922,7 +1220,7 @@
                 });
             },
 
-            setViewMode: function(m) { this.viewMode = m; ['TOTAL','MATERIALES','MANO DE OBRA','PLANILLA'].forEach(x => { const b = document.getElementById(`btn-mode-${x.replace(/ /g, '')}`); if(b) b.className = x === m ? "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm font-bold" : "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200 text-slate-600 font-bold"; }); this.renderProjectTable(); },
+            setViewMode: function(m) { this.viewMode = m; ['TOTAL','MATERIALES','MANO DE OBRA','PLANILLA'].forEach(x => { const b = document.getElementById(`btn-mode-${x.replace(/ /g, '')}`); if(b) b.className = x === m ? "flex-none md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm font-bold" : "flex-none md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200 text-slate-600 font-bold"; }); this.renderProjectTable(); },
 
             renderProjectTable: function() {
                 const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
@@ -969,6 +1267,112 @@
                     });
                 });
                 if(document.getElementById('summary-mat')) { document.getElementById('summary-mat').textContent = this.formatCurrency(tm); document.getElementById('summary-mo').textContent = this.formatCurrency(to); document.getElementById('summary-total').textContent = this.formatCurrency(tm + to); }
+            },
+
+            // --- JORNALES LOGIC ---
+            renderJornales: function() {
+                const tb = document.getElementById('jornales-table');
+                if(!tb) return;
+                tb.innerHTML = '';
+                let total = 0;
+
+                if(this.currentProject.jornales.length === 0) {
+                    tb.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400 font-medium">No hay trabajadores asignados. Agrega uno para comenzar a estimar jornales.</td></tr>`;
+                } else {
+                    this.currentProject.jornales.forEach(j => {
+                        const sub = (parseFloat(j.jornal) || 0) * (parseFloat(j.dias) || 0);
+                        total += sub;
+                        tb.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition-colors group">
+                                <td class="p-2"><input type="text" placeholder="Ej: Juan Pérez" class="w-full bg-transparent border-b border-transparent focus:border-emerald-400 outline-none px-2 py-1.5 font-bold text-slate-700 transition-colors" value="${j.nombre}" onchange="app.updateJornal('${j.uid}', 'nombre', this.value)"></td>
+                                <td class="p-2"><input type="text" placeholder="Ej: Podador / Oficial" class="w-full bg-transparent border-b border-transparent focus:border-emerald-400 outline-none px-2 py-1.5 text-slate-600 transition-colors font-medium" value="${j.rol}" onchange="app.updateJornal('${j.uid}', 'rol', this.value)"></td>
+                                <td class="p-2 text-center"><input type="number" min="0" step="0.5" class="w-20 mx-auto bg-slate-50 focus:bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-center outline-none focus:border-emerald-500 font-bold text-slate-700 transition-colors" value="${j.dias}" onchange="app.updateJornal('${j.uid}', 'dias', this.value)"></td>
+                                <td class="p-2 text-right"><input type="number" min="0" step="100" class="w-full max-w-[120px] ml-auto bg-slate-50 focus:bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-right outline-none focus:border-emerald-500 font-bold text-slate-700 transition-colors" value="${j.jornal}" onchange="app.updateJornal('${j.uid}', 'jornal', this.value)"></td>
+                                <td class="p-2 text-right font-black text-emerald-800 text-[13px] bg-slate-50/50">${this.formatCurrency(sub)}</td>
+                                <td class="p-2 text-center sismat-actions"><button onclick="app.removeJornal('${j.uid}')" class="text-slate-300 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash-can"></i></button></td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('total-jornales-display').textContent = this.formatCurrency(total);
+            },
+            addJornal: function() {
+                this.currentProject.jornales.push({ uid: 'jor_'+Math.random(), nombre: '', rol: 'Medio Oficial', jornal: 25000, dias: 1 });
+                this.autoSaveDraft(); 
+                this.renderJornales();
+            },
+            updateJornal: function(uid, field, val) {
+                const j = this.currentProject.jornales.find(x => x.uid === uid);
+                if(j) { 
+                    j[field] = (field==='jornal'||field==='dias') ? parseFloat(val)||0 : val; 
+                    this.autoSaveDraft(); 
+                    this.renderJornales(); 
+                }
+            },
+            removeJornal: function(uid) {
+                this.currentProject.jornales = this.currentProject.jornales.filter(x => x.uid !== uid);
+                this.autoSaveDraft(); 
+                this.renderJornales();
+            },
+            printJornales: function() {
+                window.print();
+            },
+
+            // --- GASTOS Y RENTABILIDAD LOGIC ---
+            renderGastos: function() {
+                const g = this.currentProject.gastos;
+                if(!g || !document.getElementById('gasto-precioCombustible')) return;
+
+                // Bind inputs
+                ['precioCombustible','kmDia','diasObra','peajes','fletes','herramientas','admin','otros'].forEach(f => {
+                    const el = document.getElementById('gasto-'+f);
+                    if(el) el.value = g[f];
+                });
+
+                // Calculos Combustible
+                const litros = ((parseFloat(g.kmDia)||0) * (parseFloat(g.diasObra)||0)) / 10;
+                const subCombustible = litros * (parseFloat(g.precioCombustible)||0);
+                document.getElementById('subtotal-combustible').textContent = this.formatCurrency(subCombustible);
+
+                // Calculos Otros Gastos
+                const otrosGastos = (parseFloat(g.peajes)||0) + (parseFloat(g.fletes)||0) + (parseFloat(g.herramientas)||0) + (parseFloat(g.admin)||0) + (parseFloat(g.otros)||0);
+                const totalGastos = subCombustible + otrosGastos;
+
+                // Resumen del Proyecto (Presupuesto)
+                let tm = 0, to = 0;
+                this.currentProject.items.forEach(i => {
+                    const dbI = this.database.find(x => x.id === i.dbId);
+                    if(dbI) { tm += (dbI.matPrice * i.qty); to += (dbI.laborPrice * i.qty); }
+                });
+                const granTotal = tm + to; // Ingreso Bruto
+                
+                // Resumen Jornales
+                const totalJornales = this.currentProject.jornales.reduce((acc, j) => acc + ((parseFloat(j.jornal)||0) * (parseFloat(j.dias)||0)), 0);
+
+                // Utilidad Estimada = Total Ingreso - Costo Materiales de Base - Costo Jornales Real - Gastos Operativos
+                const utilidad = granTotal - tm - totalJornales - totalGastos;
+
+                // Updates UI
+                document.getElementById('renta-ingreso').textContent = this.formatCurrency(granTotal);
+                document.getElementById('renta-materiales').textContent = "-" + this.formatCurrency(tm);
+                document.getElementById('renta-jornales').textContent = "-" + this.formatCurrency(totalJornales);
+                document.getElementById('renta-gastos').textContent = "-" + this.formatCurrency(totalGastos);
+
+                const divUtil = document.getElementById('renta-utilidad');
+                divUtil.textContent = this.formatCurrency(utilidad);
+                
+                if (utilidad < 0) {
+                    divUtil.classList.remove('text-white');
+                    divUtil.classList.add('text-red-200');
+                } else {
+                    divUtil.classList.add('text-white');
+                    divUtil.classList.remove('text-red-200');
+                }
+            },
+            updateGasto: function(field, val) {
+                this.currentProject.gastos[field] = parseFloat(val)||0;
+                this.autoSaveDraft(); 
+                this.renderGastos();
             },
 
             renderDatabaseTable: function(fVal) {
