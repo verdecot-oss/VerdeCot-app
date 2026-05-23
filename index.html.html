@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VerdeCot | Presupuestos de Paisajismo</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857', 900: '#064e3b' },
+                        earth: { 100: '#f5f5f4', 200: '#e7e5e4', 800: '#292524', 900: '#1c1917' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f7f6; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        input[type="number"], input[type="text"], input[type="email"], input[type="password"], textarea { font-size: 14px; }
+
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .print-only-header { display: none; }
+
+        /* REGLAS DE IMPRESIÓN MEJORADAS PARA EVITAR CORTES AL FINAL */
+        @media print {
+            @page { size: landscape; margin: 10mm; }
+            html, body { background-color: white !important; color: black !important; height: auto !important; min-height: 100% !important; overflow: visible !important; }
+            
+            .print-hide, aside, header, .sismat-tabs, .sismat-actions, #toast-container, .md\:hidden { display: none !important; }
+            
+            main, #main-content, #budget-panel, #budget-panel > div, .table-container { 
+                overflow: visible !important; 
+                height: auto !important; 
+                max-height: none !important;
+                display: block !important; 
+                position: relative !important;
+            }
+            
+            /* Forzar padding inferior al final de todo para engañar a la impresora */
+            #budget-panel { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; padding-bottom: 20mm !important; }
+            .table-container { border: none !important; }
+            
+            table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #cbd5e1 !important; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th, td { padding: 4px 6px !important; font-size: 9px !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+            th { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; color: #334155 !important; font-weight: bold !important; }
+            input[type="number"] { border: none !important; background: transparent !important; text-align: center; padding: 0; font-size: 10px !important; color: #0f172a !important; }
+            
+            .print-only-header { 
+                display: flex !important; 
+                border-bottom: 2px solid #0f172a !important; 
+                margin-bottom: 15px !important; 
+                padding-bottom: 10px !important; 
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            body.print-hide-unit .col-unit { display: none !important; }
+            body.print-hide-mo .col-mo { display: none !important; }
+            body.print-hide-mat .col-mat { display: none !important; }
+            body.print-hide-subtot .col-subtot { display: none !important; }
+            
+            #budget-summary-block { 
+                background-color: #f8fafc !important; 
+                border: 2px solid #0f172a !important; 
+                color: #0f172a !important; 
+                margin-top: 15px !important; 
+                page-break-inside: avoid !important; 
+                -webkit-print-color-adjust: exact; 
+                display: block !important;
+                margin-bottom: 10mm !important; /* Separación extra del borde inferior */
+            }
+            #budget-summary-block * { color: #0f172a !important; border-color: #94a3b8 !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden selection:bg-emerald-500 selection:text-white no-select">
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 print-hide"></div>
+
+    <div id="subscription-modal" class="fixed inset-0 bg-slate-900/95 z-[60] hidden flex-col items-center justify-center p-4 overflow-y-auto print-hide backdrop-blur-md">
+        <div class="max-w-5xl w-full text-center fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 text-red-500 mb-4 ring-4 ring-red-500/10">
+                <i class="fa-solid fa-lock text-3xl"></i>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Tu prueba gratuita ha finalizado.</h2>
+            <div class="mt-6"><button onclick="app.signOutFromLock()" class="text-slate-500 hover:text-slate-300 text-sm underline">Cerrar sesión y salir</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE GUARDADO DE PROYECTO TIPO SISMAT -->
+    <div id="save-budget-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex-col items-center justify-center p-4 print-hide backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden fade-in border border-slate-200">
+            <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-floppy-disk text-emerald-600 mr-2"></i> Guardar Cómputo</h3>
+                <button onclick="app.closeSaveModal()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Título del Cómputo <span class="text-red-500">*</span></label>
+                    <input type="text" id="save-title" placeholder="Ej: Jardín Familia Pérez" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all font-bold text-slate-800">
+                </div>
+                
+                <div class="mb-4">
+                    <button onclick="document.getElementById('save-extra-info').classList.toggle('hidden'); this.querySelector('.fa-chevron-down').classList.toggle('rotate-180');" class="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                        <i class="fa-solid fa-plus"></i> INFORMACIÓN ADICIONAL <i class="fa-solid fa-chevron-down ml-1 transition-transform duration-200"></i>
+                    </button>
+                </div>
+
+                <div id="save-extra-info" class="hidden space-y-4 pt-2 border-t border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha del Cómputo</label>
+                            <input type="date" id="save-date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Nombre del Cliente</label>
+                            <input type="text" id="save-client" placeholder="Opcional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Dirección de la Obra</label>
+                            <input type="text" id="save-address" placeholder="Opcional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Teléfono del Cliente</label>
+                            <input type="text" id="save-phone" placeholder="Opcional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Observaciones</label>
+                        <textarea id="save-notes" rows="2" placeholder="Notas internas o aclaraciones..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700 resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                <button onclick="app.closeSaveModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
+                <button onclick="app.executeSaveProject()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Presupuesto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opciones impresión Modal -->
+    <div id="print-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm print-hide">
+        <div class="bg-white rounded-2xl shadow-2xl w-80 p-6 border border-slate-200 fade-in">
+            <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Opciones de impresión</h3>
+                <button onclick="app.closePrintModal()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center gap-3 text-sm text-slate-600 cursor-pointer font-medium hover:text-slate-900 transition-colors">
+                    <input type="checkbox" id="print-opt-unit" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"> Ocultar costos unitarios
+                </label>
+                <label class="flex items-center gap-3 text-sm text-slate-600 cursor-pointer font-medium hover:text-slate-900 transition-colors">
+                    <input type="checkbox" id="print-opt-mo" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"> Ocultar mano de obra
+                </label>
+                <label class="flex items-center gap-3 text-sm text-slate-600 cursor-pointer font-medium hover:text-slate-900 transition-colors">
+                    <input type="checkbox" id="print-opt-mat" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"> Ocultar materiales
+                </label>
+                <label class="flex items-center gap-3 text-sm text-slate-600 cursor-pointer font-medium hover:text-slate-900 transition-colors">
+                    <input type="checkbox" id="print-opt-subtot" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"> Ocultar subtotales
+                </label>
+            </div>
+            <button onclick="app.executePrint()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
+                <i class="fa-solid fa-print"></i> Generar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LANDING PAGE (SCROLLEABLE Y MODERNA)       -->
+    <!-- ========================================== -->
+    <!-- Agregado style inline oscuro por si Tailwind tarda en cargar -->
+    <div id="auth-modal" style="background-color: #0f172a;" class="fixed inset-0 bg-slate-900 z-50 overflow-y-auto print-hide scroll-smooth transition-all duration-500">
+        <!-- Navbar Superior Landing -->
+        <nav class="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-50 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-leaf text-emerald-500 text-2xl"></i>
+                <span class="text-2xl font-black tracking-tighter text-white" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-400">Cot</span></span>
+            </div>
+            <div class="hidden md:flex gap-6">
+                <button onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})" class="text-sm font-bold text-slate-300 hover:text-white transition-colors">Planes y Precios</button>
+                <button onclick="document.getElementById('auth-section').scrollIntoView({behavior: 'smooth'})" class="text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors">Acceso Profesionales</button>
+            </div>
+        </nav>
+
+        <!-- SECCIÓN 1: HERO -->
+        <div class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+            <img src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=2000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-luminosity" alt="Paisajismo Profesional">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/80 to-slate-900"></div>
+            <div class="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
+                <div class="bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-8">La herramienta definitiva para el rubro</div>
+                <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight" style="font-family: 'Montserrat', sans-serif;">
+                    Presupuesta como un <br> <span class="text-emerald-400">Verdadero Profesional</span>
+                </h1>
+                <p class="text-lg md:text-xl text-slate-300 font-medium mb-12 max-w-2xl leading-relaxed">
+                    Software de cálculo de materiales, mano de obra e inflación, diseñado exclusivamente para <span class="text-white font-bold">constructores y paisajistas</span>.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center w-full sm:w-auto">
+                    <button onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-bold text-base transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                        Ver Planes <i class="fa-solid fa-arrow-down ml-2"></i>
+                    </button>
+                    <button onclick="document.getElementById('auth-section').scrollIntoView({behavior: 'smooth'})" class="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-xl font-bold text-base transition-all border border-slate-700">
+                        Iniciar Sesión
+                    </button>
+                </div>
+            </div>
+            <div class="absolute bottom-8 animate-bounce text-slate-500"><i class="fa-solid fa-chevron-down text-2xl"></i></div>
+        </div>
+
+        <!-- SECCIÓN 2: PRECIOS -->
+        <div id="pricing-section" class="py-24 bg-slate-900 relative">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Ahorra tiempo y asegura tu rentabilidad</h2>
+                    <p class="text-emerald-200 text-lg">Actualización automática por índices CAC e INDEC.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Demo -->
+                    <div class="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col hover:border-slate-500 transition-colors shadow-lg">
+                        <h3 class="text-slate-300 font-bold text-xl mb-1">Prueba Gratis</h3>
+                        <p class="text-xs text-slate-500 font-bold uppercase mb-4">Por 7 días</p>
+                        <div class="text-4xl font-black text-white mb-8">$0</div>
+                        <ul class="text-slate-300 space-y-4 mb-8 flex-1 text-sm">
+                            <li><i class="fa-solid fa-check text-slate-500 mr-2"></i>Acceso a lista base</li>
+                            <li><i class="fa-solid fa-check text-slate-500 mr-2"></i>Cómputo estándar</li>
+                        </ul>
+                        <button onclick="app.signInDemo()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Probar Demo</button>
+                    </div>
+                    <!-- Mensual -->
+                    <div class="bg-gradient-to-b from-emerald-900 to-slate-800 rounded-3xl p-8 border-2 border-emerald-500 relative transform md:-translate-y-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col">
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-md">Más Elegido</div>
+                        <h3 class="text-emerald-400 font-bold text-xl mb-1">Mensual Pro</h3>
+                        <p class="text-xs text-emerald-600/80 font-bold uppercase mb-4">Suscripción recurrente</p>
+                        <div class="text-4xl font-black text-white mb-2">$10.000<span class="text-sm font-normal text-slate-400">/mes</span></div>
+                        <ul class="text-slate-200 space-y-4 mb-8 flex-1 text-sm font-medium mt-6">
+                            <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Proyectos Ilimitados</li>
+                            <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Ajuste por inflación</li>
+                            <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Catálogo editable</li>
+                        </ul>
+                        <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-xl transition-all shadow-lg">Comenzar Ahora</button>
+                    </div>
+                    <!-- Semestral -->
+                    <div class="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col hover:border-emerald-500 transition-colors shadow-lg relative">
+                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">-1 MES GRATIS</div>
+                        <h3 class="text-white font-bold text-xl mb-1">Semestral Pro</h3>
+                        <div class="text-4xl font-black text-white mt-4 mb-8">$55.000</div>
+                        <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full mt-auto py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Seleccionar</button>
+                    </div>
+                    <!-- Anual -->
+                    <div class="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col hover:border-emerald-500 transition-colors shadow-lg relative">
+                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">-2 MESES GRATIS</div>
+                        <h3 class="text-white font-bold text-xl mb-1">Anual Pro</h3>
+                        <div class="text-4xl font-black text-white mt-4 mb-8">$110.000</div>
+                        <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full mt-auto py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Seleccionar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: LOGIN / REGISTRO CON CÓDIGOS MAESTROS -->
+        <div id="auth-section" class="py-24 bg-slate-100">
+            <div class="max-w-5xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Accede a tu cuenta</h2>
+                    <p class="text-slate-500 mt-2">Crea tu usuario o inicia sesión para gestionar tus obras. <br> <span class="text-emerald-600 font-bold text-sm">¿Tienes código Creador o VIP? Ingrésalo en el campo Contraseña / Código Especial.</span></p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+                    <!-- Registro (Soy Nuevo) -->
+                    <div class="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-2 h-full bg-slate-800"></div>
+                        <h3 class="text-2xl font-black text-slate-800 mb-2">Soy Nuevo</h3>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita.</p>
+                        <div class="space-y-5">
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="reg-email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="reg-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
+                            <button id="btn-register" class="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg mt-4 transition-all">Crear Mi Cuenta</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Login (Ya tengo cuenta) -->
+                    <div class="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                        <h3 class="text-2xl font-black text-emerald-700 mb-2">Ya tengo cuenta</h3>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Inicia sesión con tu correo, o usa tus códigos de acceso especiales aquí.</p>
+                        <div class="space-y-5">
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="login-email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña / Código Especial</label><input type="password" id="login-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
+                            <button id="btn-login" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(16,185,129,0.3)] mt-4 transition-all">
+                                Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- HEADER -->
+    <header class="bg-emerald-50 border-b border-emerald-200 shadow-sm z-10 flex flex-col print-hide relative">
+        <div class="px-5 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('panel')">
+                    <div class="relative flex items-center justify-center mr-1">
+                        <i class="fa-solid fa-leaf text-emerald-600 text-3xl drop-shadow-sm"></i>
+                        <i class="fa-solid fa-gear text-emerald-950 text-[10px] absolute -bottom-0.5 -right-1.5 bg-emerald-50 rounded-full border-2 border-emerald-200 w-[18px] h-[18px] flex items-center justify-center"></i>
+                    </div>
+                    <h1 class="text-3xl font-black tracking-tighter" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-500">Cot</span></h1>
+                </div>
+                
+                <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
+                    <button onclick="app.navigate('panel')" id="nav-panel" class="text-emerald-700 transition-colors">Panel Principal</button>
+                    <button onclick="app.navigate('computo')" id="nav-computo" class="hover:text-emerald-700 transition-colors">Cómputo</button>
+                    <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Costos</button>
+                    <button onclick="app.navigate('gastos')" id="nav-gastos" class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
+                    <button onclick="app.navigate('indices')" id="nav-indices" class="hover:text-emerald-700 transition-colors">Índices</button>
+                </nav>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="user-badge" class="bg-emerald-100 px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-800 uppercase tracking-wider hidden md:flex items-center gap-2 border border-emerald-200 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span> Conectando...
+                </div>
+                
+                <div class="relative inline-block text-left">
+                    <button id="user-menu-btn" onclick="app.toggleUserMenu(event)" class="flex items-center gap-2 text-sm text-slate-700 font-bold hover:text-emerald-800 transition-all focus:outline-none py-1.5 px-3 rounded-xl hover:bg-emerald-100/50 border border-transparent hover:border-emerald-200">
+                        <div class="w-8 h-8 rounded-full bg-emerald-200/50 text-emerald-700 flex items-center justify-center text-sm shadow-inner border border-emerald-200">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <span id="user-display" class="max-w-[120px] truncate hidden sm:block">Conectando...</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200" id="user-menu-chevron"></i>
+                    </button>
+                    
+                    <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-slate-100 z-50 divide-y divide-slate-50 origin-top-right transform transition-all overflow-hidden border border-slate-200">
+                        <div class="py-2">
+                            <button onclick="app.navigate('panel'); app.toggleUserMenu(event);" class="w-full text-left px-5 py-3 text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-3 transition-colors">
+                                <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-folder-open"></i></div> Mis Cómputos
+                            </button>
+                            <button onclick="app.navigate('perfil'); app.toggleUserMenu(event);" class="w-full text-left px-5 py-3 text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-3 transition-colors">
+                                <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-user-pen"></i></div> Editar Perfil
+                            </button>
+                        </div>
+                        <div class="py-2 bg-slate-50/50">
+                            <button onclick="app.signOut()" class="w-full text-left px-5 py-3 text-sm text-red-600 hover:bg-red-50 font-bold flex items-center gap-3 transition-colors">
+                                <div class="w-7 h-7 rounded-lg bg-red-100 text-red-600 flex items-center justify-center"><i class="fa-solid fa-arrow-right-from-bracket"></i></div> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sismat-ticker bg-[#eaf4ef] border-t border-emerald-200 px-5 py-1.5 flex items-center justify-between text-[11px] font-bold text-emerald-800 overflow-x-auto whitespace-nowrap gap-6 shadow-inner">
+            <div class="flex items-center uppercase tracking-wider" id="current-date">ÚLTIMA ACTUALIZACIÓN: HOY</div>
+        </div>
+    </header>
+
+    <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm">
+        <button onclick="app.navigate('panel')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-chart-pie mb-1 text-sm block"></i> Panel</button>
+        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
+        <button onclick="app.navigate('database')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Costos</button>
+    </div>
+
+    <main id="main-content" class="flex-1 w-full flex flex-col md:flex-row overflow-hidden bg-[#f4f7f6]">
+    </main>
+
+    <!-- VISTA PANEL PRINCIPAL CON "MIS CÓMPUTOS" TIPO SISMAT -->
+    <template id="view-panel">
+        <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
+            <!-- Header simple del panel -->
+            <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight" id="panel-welcome-name">Panel de usuario</h2>
+                </div>
+                <div id="panel-sub-status-container" class="hidden md:block">
+                    <span class="px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs uppercase tracking-wider border border-emerald-200" id="panel-sub-type">Licencia Pro</span>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6">
+                <!-- Pestañas estilo Sismat -->
+                <div class="flex border-b border-slate-300 mb-6">
+                    <button class="bg-emerald-800 text-white font-bold text-sm px-6 py-3 rounded-t-lg border border-emerald-800 border-b-0 shadow-sm relative top-[1px]">Mis Cómputos</button>
+                </div>
+
+                <!-- Tabla de cómputos -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-slate-700 text-sm">Cómputos Guardados</h3>
+                        <button onclick="app.clearProjectAndNavigate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Nuevo Cómputo
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full text-xs text-left min-w-[800px] border-collapse">
+                            <thead class="bg-[#f8fafc] text-slate-500 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Fecha</th>
+                                    <th class="p-3">Título del cómputo</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3 text-right">Materiales</th>
+                                    <th class="p-3 text-right">Mano de Obra</th>
+                                    <th class="p-3 text-right">Total</th>
+                                    <th class="p-3 text-center w-24">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saved-budgets-list" class="divide-y divide-slate-100">
+                                <tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">Cargando tus presupuestos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- VISTA CÓMPUTO -->
+    <template id="view-computo">
+        <div class="flex flex-col md:flex-row w-full h-full fade-in">
+            <div class="w-full md:w-[320px] bg-white border-r border-slate-200 flex flex-col h-1/2 md:h-full z-0 shadow-sm print-hide">
+                <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
+                    <h2 class="font-bold text-lg leading-none tracking-tight">Catálogo</h2>
+                    <i class="fa-solid fa-calculator text-emerald-300 text-xs"></i>
+                </div>
+                <div class="p-3 border-b border-slate-200 bg-slate-50">
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="item-search" placeholder="Buscar etapa o tareas..." class="w-full pl-8 pr-2 py-2 text-xs border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium" onkeyup="app.filterCatalog(this.value)">
+                    </div>
+                </div>
+                <div class="overflow-y-auto flex-1 custom-scrollbar" id="catalog-list"></div>
+            </div>
+
+            <div class="flex-1 flex flex-col p-4 md:p-6 h-full overflow-hidden">
+                <div id="budget-panel" class="bg-white border border-slate-200 shadow-sm rounded-2xl flex-1 flex flex-col overflow-hidden">
+                    
+                    <div class="border-b border-slate-200 flex px-4 pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide bg-slate-50">
+                        <div class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
+                            <i class="fa-solid fa-file-invoice"></i> Hoja de Presupuesto <span id="current-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 flex-1 flex flex-col overflow-hidden">
+                        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 sismat-actions print-hide">
+                            <div class="flex bg-slate-100 p-1 rounded-xl text-[10px] md:text-xs font-bold text-slate-600 w-full xl:w-auto" id="mode-buttons">
+                                <button onclick="app.setViewMode('TOTAL')" id="btn-mode-TOTAL" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm">TOTAL</button>
+                                <button onclick="app.setViewMode('MATERIALES')" id="btn-mode-MATERIALES" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">MATERIALES</button>
+                                <button onclick="app.setViewMode('MANO DE OBRA')" id="btn-mode-MANO DE OBRA" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">M. OBRA</button>
+                                <button onclick="app.setViewMode('PLANILLA')" id="btn-mode-PLANILLA" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">PLANILLA</button>
+                            </div>
+                            <div class="flex gap-2 w-full xl:w-auto justify-end flex-wrap">
+                                <!-- Botón Limpiar para no borrar 1 a 1 -->
+                                <button onclick="app.clearProject()" class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-all"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+                                <button onclick="app.openPrintModal()" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 shadow-sm transition-all"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
+                                <button onclick="app.openSaveModal()" class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-600 px-5 py-2 rounded-xl hover:bg-emerald-700 shadow-sm transition-all"><i class="fa-solid fa-floppy-disk"></i> Guardar Cómputo</button>
+                            </div>
+                        </div>
+
+                        <!-- CABECERA PARA IMPRESIÓN -->
+                        <div id="print-header-block" class="print-only-header">
+                            <div class="flex items-center gap-5">
+                                <img id="print-logo-img" src="" style="max-height: 60px; display: none;">
+                                <div>
+                                    <h1 id="print-header-name" style="font-size: 22px; font-weight: 900; color: #0f172a; margin:0; line-height:1;">Presupuesto de Obra</h1>
+                                    <p id="print-header-sub" style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;"></p>
+                                </div>
+                            </div>
+                            <div style="text-align: right; font-size: 10px; color: #475569; max-width: 250px;">
+                                <p id="print-header-contact" style="margin-bottom: 4px; white-space: pre-wrap;"></p>
+                                <p style="font-weight: bold;">Fecha: <span id="print-header-date"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Tabla -->
+                        <div class="flex-1 overflow-auto border border-slate-200 rounded-xl custom-scrollbar bg-white table-container shadow-sm">
+                            <table class="w-full text-xs text-left min-w-[700px] border-collapse">
+                                <thead id="table-header" class="bg-[#f8fafc] text-slate-500 font-bold sticky top-0 z-10 shadow-sm border-b border-slate-200"></thead>
+                                <tbody id="project-items-table" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Bloque de Totales -->
+                        <div id="budget-summary-block" class="bg-emerald-800 text-white mt-4 rounded-xl flex flex-col items-end justify-center p-6 shadow-md">
+                            <div class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2">
+                                <span class="flex-1 text-right pr-4">Materiales</span>
+                                <span id="summary-mat" class="w-32 text-right font-bold text-white tracking-wide">$0</span>
+                            </div>
+                            <div class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2 mt-1.5">
+                                <span class="flex-1 text-right pr-4">Mano de obra</span>
+                                <span id="summary-mo" class="w-32 text-right font-bold text-white tracking-wide">$0</span>
+                            </div>
+                            <div class="text-2xl md:text-3xl font-black text-white flex justify-end w-full sm:w-2/3 md:w-1/2 mt-4 pt-4 border-t border-emerald-700/50">
+                                <span class="flex-1 text-right pr-4 tracking-tight">Total General</span>
+                                <span id="summary-total" class="w-40 text-right tracking-tight">$0</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- LAS VISTAS DE DATABASE, INDICES Y PERFIL SE MANTIENEN IGUAL -->
+
+    <template id="view-gastos">
+        <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
+            <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
+                <div><h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Mis Gastos y Rentabilidad</h2><p class="text-sm text-slate-500 mt-1">Calculadora vinculada al cómputo activo.</p></div>
+                <button onclick="app.printSpecific('rentabilidad')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm"><i class="fa-solid fa-print"></i> PDF Rentabilidad</button>
+            </div>
+            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 text-sm">Gastos adicionales de obra</h3>
+                        <div class="flex gap-2"><button onclick="app.addExpenseRow()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i> Agregar gasto</button><button onclick="app.printSpecific('gastos')" class="bg-white border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold">PDF Gastos</button></div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left min-w-[760px]">
+                            <thead class="bg-slate-100 text-slate-500 font-bold"><tr><th class="p-3">Rubro</th><th class="p-3">Detalle</th><th class="p-3 text-center">Cant.</th><th class="p-3 text-right">Costo unit.</th><th class="p-3 text-right">Total</th><th class="p-3 text-center w-10"></th></tr></thead>
+                            <tbody id="expenses-table" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Rubros sugeridos: combustible, peajes, insumos menores, fletes, alquiler/compra de herramientas, viáticos, estacionamiento, disposición de residuos, protección personal, mantenimiento de máquinas, imprevistos y administración.</div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                        <h3 class="font-bold text-slate-800 mb-4">Calculadora de rentabilidad</h3>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Rentabilidad deseada (%)</label>
+                        <input id="profit-percent" type="number" value="30" onchange="app.updateProfitPercent(this.value)" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-right font-bold outline-none focus:border-emerald-500 mb-4">
+                        <div id="profit-summary" class="space-y-2 text-sm"></div>
+                    </div>
+                    <div class="bg-emerald-800 text-white rounded-2xl shadow-sm p-5">
+                        <h3 class="font-bold text-emerald-100 mb-3">Precio sugerido</h3>
+                        <div id="final-price-box" class="text-4xl font-black">$0</div>
+                        <p class="text-xs text-emerald-100 mt-2">Costo directo + gastos + rentabilidad.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="view-database">...</template>
+    <template id="view-indices">...</template>
+    <template id="view-perfil">...</template>
+
+    <!-- (Se incluyen las plantillas completas para que el archivo funcione perfecto) -->
+    <template id="view-database">
+        <div class="p-4 md:p-6 w-full h-full fade-in max-w-5xl mx-auto">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
+                <div class="bg-slate-800 p-5 text-white flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-database text-sm"></i></div>
+                        <h2 class="font-bold text-lg" id="db-title-display">Mis Costos Maestros</h2>
+                    </div>
+                    <div class="relative flex-1 sm:w-64 text-slate-800">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                        <input type="text" placeholder="Buscar material o tarea..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/30 transition-all font-medium border-0" onkeyup="app.filterDatabase(this.value)">
+                    </div>
+                </div>
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left min-w-[500px]">
+                        <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                            <tr>
+                                <th class="p-4">Descripción del Ítem</th>
+                                <th class="p-4 text-center">Und.</th>
+                                <th class="p-4 text-right w-32">Material ($)</th>
+                                <th class="p-4 text-right w-32">M. Obra ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-items-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="view-indices">
+        <div class="p-4 md:p-8 w-full max-w-2xl mx-auto h-full overflow-y-auto fade-in flex items-center justify-center">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden w-full">
+                <div class="bg-gradient-to-r from-emerald-600 to-emerald-800 p-8 text-white text-center relative overflow-hidden">
+                    <i class="fa-solid fa-chart-line text-6xl mb-4 opacity-20 absolute -right-4 -bottom-4 transform rotate-12"></i>
+                    <i class="fa-solid fa-bolt text-4xl mb-3 text-emerald-200 relative z-10"></i>
+                    <h2 class="text-2xl font-bold relative z-10">Ajuste por Inflación (CAC)</h2>
+                    <p class="text-sm text-emerald-100 mt-2 font-medium relative z-10 max-w-sm mx-auto">Aplica un incremento porcentual masivo a tu lista privada de precios.</p>
+                </div>
+                <div class="p-8 space-y-6">
+                    <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento de Materiales (%)</label>
+                        <input type="number" id="input-inf-mat" placeholder="Ej: 5.4" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+                    </div>
+                    <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento de Mano de Obra (%)</label>
+                        <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+                    </div>
+                    <button onclick="app.applyIndices()" class="w-full py-4 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition-all uppercase text-sm flex justify-center items-center gap-3">
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Aplicar a Toda la Lista
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="view-perfil">
+        <div class="w-full h-full overflow-y-auto bg-transparent fade-in">
+            <div class="bg-white border-b border-slate-200 p-6 md:px-10 md:py-8 shadow-sm">
+                <div class="max-w-6xl mx-auto flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Configuración de Perfil</h2>
+                        <p class="text-sm text-slate-500 mt-1 font-medium">Personaliza tus datos y membrete para presupuestos.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="max-w-6xl mx-auto p-4 md:p-8">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-72 flex flex-col gap-2 shrink-0">
+                        <button onclick="app.setProfileTab('usuario')" id="tab-prof-usuario" class="w-full text-left px-5 py-3.5 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-xl transition-all flex items-center gap-3"><i class="fa-solid fa-id-badge w-5"></i> Datos Personales</button>
+                        <button onclick="app.setProfileTab('computo')" id="tab-prof-computo" class="w-full text-left px-5 py-3.5 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-xl transition-all flex items-center gap-3"><i class="fa-solid fa-palette w-5"></i> Diseño Membrete</button>
+                    </div>
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-10 flex flex-col justify-between min-h-[500px]">
+                        <div>
+                            <div id="prof-content-usuario" class="space-y-6 fade-in block">
+                                <h3 class="text-xl font-bold text-slate-800">Información personal</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-xs font-bold text-slate-500 mb-1">Nombre Completo</label><input type="text" id="prof-name" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 mb-1">Teléfono</label><input type="text" id="prof-phone" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
+                                </div>
+                            </div>
+                            <div id="prof-content-computo" class="hidden space-y-6 fade-in">
+                                <h3 class="text-xl font-bold text-slate-800">Diseño de Membrete PDF</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-xs font-bold text-slate-500 mb-1">Empresa / Marca</label><input type="text" id="prof-comp-name" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 mb-1">Subtítulo</label><input type="text" id="prof-comp-subtitle" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
+                                    <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Datos de Contacto (Cabecera PDF)</label><textarea id="prof-comp-contact" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 resize-none"></textarea></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-8 mt-6 border-t border-slate-100">
+                            <button onclick="app.saveProfileData()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all text-sm flex items-center gap-2"><i class="fa-solid fa-check"></i> Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, writeBatch, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyAtsboZ8Fnn8PEg8Z99iQUOJhJy4DRyn5g", authDomain: "verdecot-1db0d.firebaseapp.com", projectId: "verdecot-1db0d", storageBucket: "verdecot-1db0d.firebasestorage.app", messagingSenderId: "260889721477", appId: "1:260889721477:web:0139c4c1ac5bd5391147ec" };
+        const appInstance = initializeApp(firebaseConfig); const auth = getAuth(appInstance); const db = getFirestore(appInstance); const appId = 'verdecot-app';
+
+        const INITIAL_CATALOG = [
+            { id: '101', category: '01 - Trabajos Preliminares', name: 'Limpieza y nivelación manual de terreno', unit: 'M2', matPrice: 0, laborPrice: 1800 },
+            { id: '102', category: '01 - Trabajos Preliminares', name: 'Limpieza de terreno con minicargadora (Bobcat)', unit: 'GL', matPrice: 0, laborPrice: 185000 },
+            { id: '103', category: '01 - Trabajos Preliminares', name: 'Obrador, depósito y sanitario provisorio', unit: 'GL', matPrice: 165000, laborPrice: 45000 },
+            { id: '204', category: '02 - Movimiento de Suelos', name: 'Provisión y desparramo de Tierra Fértil Negra', unit: 'M3', matPrice: 48000, laborPrice: 15000 },
+            { id: '301', category: '03 - Césped y Cubresuelos', name: 'Grama Bahiana en panes (Provisión y Colocación)', unit: 'M2', matPrice: 6500, laborPrice: 2200 },
+            { id: '401', category: '04 - Plantaciones (Árboles)', name: 'Árboles caducos 15L (Fresno, Jacarandá, Arce)', unit: 'U', matPrice: 22000, laborPrice: 6500 },
+            { id: '501', category: '05 - Plantaciones (Arbustos)', name: 'Arbustos 4L (Buxus, Eugenia, Oleotex)', unit: 'U', matPrice: 5500, laborPrice: 1800 },
+            { id: '603', category: '06 - Riego Automático', name: 'Toberas emergentes (Cuerpo + Boquilla)', unit: 'U', matPrice: 9500, laborPrice: 3500 },
+            { id: '701', category: '07 - Obra Civil en Jardín', name: 'Mampostería p/ canteros elevados (Ladrillo hueco)', unit: 'M2', matPrice: 14500, laborPrice: 24000 },
+            { id: '801', category: '08 - Iluminación Exterior', name: 'Estacas LED para plantas (Artefacto + Lámpara)', unit: 'U', matPrice: 18000, laborPrice: 6500 },
+            { id: '903', category: '09 - Mantenimiento y Poda', name: 'Corte de césped general (Hasta 1000m2)', unit: 'M2', matPrice: 0, laborPrice: 150 },
+            { id: '1201', category: '12 - Diseño y Modelado', name: 'Diseño de paisaje completo y anteproyecto conceptual', unit: 'GL', matPrice: 20000, laborPrice: 180000 }
+        ];
+
+        window.app = {
+            user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar' },
+            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30 }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
+
+            checkSubscriptionStatus: function(u) { return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' }; }, // Forzamos Pro para esta etapa
+
+            handleUserAuthChange: function(user) {
+                const authModal = document.getElementById('auth-modal');
+                if(authModal) authModal.classList.add('hidden');
+
+                const displayName = user.isAnonymous ? 'Modo Demo' : (user.email || 'Usuario').split('@')[0];
+                const userDisplay = document.getElementById('user-display');
+                if(userDisplay) userDisplay.textContent = displayName;
+
+                let roleTxt = 'Usuario Estándar';
+                let badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Estándar';
+                if(this.userProfile.role === 'creator') {
+                    roleTxt = '🟢 ADMINISTRADOR CREADOR';
+                    badgeHtml = '<i class="fa-solid fa-crown text-amber-500"></i> Creador';
+                }
+                if(this.userProfile.role === 'vip') {
+                    roleTxt = '⭐ USUARIO VIP PRO';
+                    badgeHtml = '<i class="fa-solid fa-star text-amber-500"></i> VIP Pro';
+                }
+                const roleDisplay = document.getElementById('user-role-display');
+                if(roleDisplay) roleDisplay.textContent = roleTxt;
+                const badge = document.getElementById('user-badge');
+                if(badge) badge.innerHTML = badgeHtml;
+            },
+
+            init: function() {
+                this.bindAuthEvents();
+                if(document.getElementById('current-date')) document.getElementById('current-date').textContent = `ÚLTIMA ACTUALIZACIÓN: ${new Date().toLocaleDateString('es-AR')}`;
+                const saveDate = document.getElementById('save-date');
+                if(saveDate) saveDate.valueAsDate = new Date();
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        this.user = user;
+                        await this.loadProfileData();
+                        this.handleUserAuthChange(user);
+                        this.enterPortal();
+                        window.scrollTo(0,0);
+                    } else {
+                        const authModal = document.getElementById('auth-modal');
+                        if(authModal) authModal.classList.remove('hidden');
+                    }
+                });
+            },
+
+            toggleUserMenu: function(e) { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('hidden'); },
+            enterPortal: function() { document.getElementById('auth-modal').className="hidden"; this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('panel'); },
+            formatCurrency: (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0),
+            showToast: function(msg) { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = "bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-3 fade-in z-50"; t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3500); },
+            bindAuthEvents: function() {
+                const btnLogin = document.getElementById('btn-login');
+                const btnReg = document.getElementById('btn-register');
+
+                // Claves especiales de acceso. Para producción conviene mover esta validación a Firebase Functions / Custom Claims.
+                const MASTER_CREATOR = "VerdeCot-Creador#2026-K9m!";
+                const MASTER_VIP = "VerdeCot-VIP#2026-R7p!";
+
+                if(btnLogin) {
+                    btnLogin.onclick = async () => {
+                        const e = document.getElementById('login-email').value.trim();
+                        const p = document.getElementById('login-password').value;
+                        if(!e || !p) { this.showToast('Completa correo y contraseña/código.'); return; }
+
+                        if (p === MASTER_CREATOR || p === MASTER_VIP) {
+                            const assignRole = p === MASTER_CREATOR ? 'creator' : 'vip';
+                            try {
+                                // Bypass de prueba: entra con Firebase anónimo para que Firestore funcione,
+                                // y guarda el rol especial en el perfil. Así no depende de que el email ya exista.
+                                const userCredential = await signInAnonymously(auth);
+                                await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), { role: assignRole, accessEmail: e }, { merge: true });
+                                this.userProfile = { ...this.userProfile, role: assignRole, accessEmail: e };
+                                this.showToast(`Acceso ${assignRole.toUpperCase()} concedido.`);
+                            } catch(err) {
+                                this.showToast('No se pudo validar el código especial. Revisa tu conexión/Firebase.');
+                            }
+                            return;
+                        }
+
+                        try { await signInWithEmailAndPassword(auth, e, p); }
+                        catch(err) { this.showToast('Correo o contraseña incorrectos.'); }
+                    };
+                }
+
+                if(btnReg) {
+                    btnReg.onclick = async () => {
+                        const e = document.getElementById('reg-email').value.trim();
+                        const p = document.getElementById('reg-password').value;
+                        if(!e || !p) { this.showToast('Completa correo y contraseña para crear la cuenta.'); return; }
+                        if(p.length < 8) { this.showToast('La contraseña debe tener al menos 8 caracteres.'); return; }
+                        try {
+                            const userCredential = await createUserWithEmailAndPassword(auth, e, p);
+                            await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), { role: 'estandar' }, { merge: true });
+                            this.showToast('Cuenta creada con éxito.');
+                        } catch(err) {
+                            this.showToast('No se pudo crear la cuenta. El correo puede existir o ser inválido.');
+                        }
+                    };
+                }
+            },
+            signInDemo: async function() { try { await signInAnonymously(auth); } catch(e) { this.showToast('Error al entrar en modo demo.'); } },
+            signOut: function() { signOut(auth); },
+
+            navigate: function(viewId) {
+                const content = document.getElementById('main-content'); const template = document.getElementById(`view-${viewId}`); if (!template) return;
+                content.innerHTML = template.innerHTML;
+                ['panel','computo','database','indices'].forEach(id => {
+                    const btn = document.getElementById(`nav-${id}`);
+                    if(btn) btn.className = id === viewId ? "text-emerald-800 font-black transition-colors border-b-[3px] border-emerald-600 pb-1" : "text-emerald-900/60 hover:text-emerald-700 font-bold transition-colors pb-1";
+                });
+                
+                if (viewId === 'panel') { 
+                    const n = this.userProfile.name ? this.userProfile.name.split(' ')[0] : 'Profesional';
+                    document.getElementById('panel-welcome-name').textContent = `¡Hola, ${n}!`;
+                    this.renderSavedBudgetsTable();
+                }
+                if (viewId === 'computo') { 
+                    this.renderCatalog(''); 
+                    this.renderProjectTable(); 
+                    const wsName = document.getElementById('current-workspace-name');
+                    if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
+                }
+                if (viewId === 'database') { this.renderDatabaseTable(''); }
+                if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
+            },
+
+            // --- PERFIL ---
+            setProfileTab: function(tabId) {
+                ['usuario', 'computo'].forEach(id => {
+                    const btn = document.getElementById(`tab-prof-${id}`); const content = document.getElementById(`prof-content-${id}`);
+                    if(btn && content) {
+                        if (id === tabId) { btn.className = "w-full text-left px-5 py-3.5 text-sm font-bold bg-emerald-100 text-emerald-800 rounded-xl transition-all flex items-center gap-3"; content.classList.remove('hidden'); content.classList.add('block'); } 
+                        else { btn.className = "w-full text-left px-5 py-3.5 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-xl transition-all flex items-center gap-3"; content.classList.add('hidden'); content.classList.remove('block'); }
+                    }
+                });
+            },
+            loadProfileData: async function() { if(!this.user) return; try { const docSnap = await getDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile')); if (docSnap.exists()) { this.userProfile = { ...this.userProfile, ...docSnap.data() }; } } catch(e) {} },
+            populateProfileForm: function() {
+                if(!this.user) return;
+                ['name','phone','companyName','companySubtitle','companyContact'].forEach(f => { if(this.userProfile[f]) { const el = document.getElementById('prof-'+(f==='companyName'?'comp-name':f==='companySubtitle'?'comp-subtitle':f==='companyContact'?'comp-contact':f)); if(el) el.value = this.userProfile[f]; } });
+            },
+            saveProfileData: async function() {
+                if(!this.user) return;
+                const u = {
+                    name: document.getElementById('prof-name').value.trim(), phone: document.getElementById('prof-phone').value.trim(),
+                    companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim()
+                };
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = u; this.showToast('Perfil actualizado.'); } catch(e) {}
+            },
+
+            // --- DATABASE & INDICES ---
+            loadDatabase: function() {
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), async (globalSnap) => {
+                    if (globalSnap.empty) { const batch = writeBatch(db); INITIAL_CATALOG.forEach(i => batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), i)); await batch.commit(); return; }
+                    const g = globalSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
+                        const c = {}; uSnap.forEach(d => { c[d.id] = d.data(); });
+                        this.database = g.map(i => { const o = c[i.id]; return { ...i, matPrice: o?.matPrice ?? i.matPrice, laborPrice: o?.laborPrice ?? i.laborPrice }; }).sort((a,b)=>a.category.localeCompare(b.category));
+                        if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
+                        if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
+                    });
+                });
+            },
+            updateDbPrice: async function(id, f, val) { if(!this.user) return; try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); } catch(e){} },
+            applyIndices: async function() {
+                if(!this.user) return; const matPerc = 1 + ((parseFloat(document.getElementById('input-inf-mat').value)||0)/100); const moPerc = 1 + ((parseFloat(document.getElementById('input-inf-mo').value)||0)/100);
+                if(matPerc===1 && moPerc===1) return;
+                try {
+                    const batch = writeBatch(db); const r = collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices');
+                    this.database.forEach(i => batch.set(doc(r, i.id), { matPrice: Math.round(i.matPrice * matPerc), laborPrice: Math.round(i.laborPrice * moPerc) }, { merge: true }));
+                    await batch.commit(); document.getElementById('input-inf-mat').value=''; document.getElementById('input-inf-mo').value=''; this.showToast('Índices aplicados.');
+                } catch(e){}
+            },
+
+            // --- WORKSPACE (Draft Auto-save) ---
+            loadDraftProject: function() { 
+                onSnapshot(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), (s) => { 
+                    if(s.exists()) { 
+                        const data = s.data();
+                        this.currentProject.items = data.items || []; 
+                        this.currentProject.loadedId = data.loadedId || null;
+                        this.currentProject.title = data.title || '';
+                        this.currentProject.expenses = data.expenses || this.currentProject.expenses || [];
+                        this.currentProject.profitPercent = data.profitPercent ?? this.currentProject.profitPercent ?? 30;
+                        if(document.getElementById('project-items-table')) this.renderProjectTable(); 
+                    } 
+                }); 
+            },
+            autoSaveDraft: async function() {
+                if(!this.user) return;
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title, expenses: this.currentProject.expenses || [], profitPercent: this.currentProject.profitPercent || 0 }); } catch(e){}
+            },
+            clearProject: function() {
+                if(confirm('¿Estás seguro de limpiar la hoja de presupuesto? Empezarás desde cero.')) {
+                    this.currentProject.items = [];
+                    this.currentProject.loadedId = null;
+                    this.currentProject.title = '';
+                    this.currentProject.expenses = [];
+                    this.currentProject.profitPercent = 30;
+                    this.autoSaveDraft();
+                    this.renderProjectTable();
+                    this.renderCatalog(document.getElementById('item-search')?.value || '');
+                    const wsName = document.getElementById('current-workspace-name');
+                    if(wsName) wsName.textContent = '(Borrador sin guardar)';
+                    this.showToast('Presupuesto en blanco.');
+                }
+            },
+            clearProjectAndNavigate: function() {
+                this.currentProject.items = [];
+                this.currentProject.loadedId = null;
+                this.currentProject.title = '';
+                this.currentProject.expenses = [];
+                this.currentProject.profitPercent = 30;
+                this.autoSaveDraft();
+                this.navigate('computo');
+            },
+
+            // --- SISMAT SAVE & DASHBOARD LOGIC ---
+            loadSavedBudgets: function() {
+                onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'savedBudgets'), (s) => {
+                    this.savedBudgets = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp);
+                    if(document.getElementById('saved-budgets-list')) this.renderSavedBudgetsTable();
+                });
+            },
+            openSaveModal: function() {
+                if(this.currentProject.items.length === 0) { this.showToast('El cómputo está vacío.'); return; }
+                document.getElementById('save-title').value = this.currentProject.title || '';
+                document.getElementById('save-budget-modal').classList.remove('hidden');
+                document.getElementById('save-budget-modal').classList.add('flex');
+            },
+            closeSaveModal: function() {
+                document.getElementById('save-budget-modal').classList.add('hidden');
+                document.getElementById('save-budget-modal').classList.remove('flex');
+            },
+            executeSaveProject: async function() {
+                if(!this.user) return;
+                const title = document.getElementById('save-title').value.trim();
+                if(!title) { alert('El Título del Cómputo es requerido.'); return; }
+
+                let totalMat = 0; let totalMo = 0;
+                this.currentProject.items.forEach(i => {
+                    const dbI = this.database.find(x => x.id === i.dbId);
+                    if(dbI) { totalMat += (dbI.matPrice * i.qty); totalMo += (dbI.laborPrice * i.qty); }
+                });
+
+                const budgetData = {
+                    title: title,
+                    date: document.getElementById('save-date').value,
+                    client: document.getElementById('save-client').value.trim(),
+                    address: document.getElementById('save-address').value.trim(),
+                    phone: document.getElementById('save-phone').value.trim(),
+                    notes: document.getElementById('save-notes').value.trim(),
+                    items: this.currentProject.items,
+                    totalMat: totalMat,
+                    totalMo: totalMo,
+                    expenses: this.currentProject.expenses || [],
+                    profitPercent: this.currentProject.profitPercent || 0,
+                    totalExpenses: this.getExpensesTotal(),
+                    targetProfit: this.getProfitAmount(),
+                    finalPrice: this.getFinalPrice(),
+                    totalGeneral: totalMat + totalMo,
+                    timestamp: Date.now()
+                };
+
+                const projId = this.currentProject.loadedId || 'proj_' + Date.now();
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'savedBudgets', projId), budgetData);
+                    this.currentProject.loadedId = projId;
+                    this.currentProject.title = title;
+                    await this.autoSaveDraft(); // Update draft metadata
+                    this.closeSaveModal();
+                    this.showToast('Cómputo guardado exitosamente.');
+                    const wsName = document.getElementById('current-workspace-name');
+                    if(wsName) wsName.textContent = `(${title})`;
+                } catch(e) {
+                    this.showToast('Error al guardar en la nube.');
+                }
+            },
+            renderSavedBudgetsTable: function() {
+                const tb = document.getElementById('saved-budgets-list'); if(!tb) return;
+                tb.innerHTML = '';
+                if(this.savedBudgets.length === 0) { tb.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">No tienes presupuestos guardados. ¡Crea el primero!</td></tr>`; return; }
+
+                this.savedBudgets.forEach(b => {
+                    // Formatear la fecha para la visualización
+                    let dateDisplay = '-';
+                    if(b.date) { const dParts = b.date.split('-'); if(dParts.length===3) dateDisplay = `${dParts[2]}/${dParts[1]}/${dParts[0]}`; }
+
+                    tb.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition-colors group">
+                            <td class="p-3 text-slate-500 font-medium">${dateDisplay}</td>
+                            <td class="p-3 font-bold text-emerald-800">${b.title}</td>
+                            <td class="p-3 text-slate-600">${b.client || '-'}</td>
+                            <td class="p-3 text-right text-slate-500">${this.formatCurrency(b.totalMat)}</td>
+                            <td class="p-3 text-right text-slate-500">${this.formatCurrency(b.totalMo)}</td>
+                            <td class="p-3 text-right font-bold text-slate-800">${this.formatCurrency(b.totalGeneral)}</td>
+                            <td class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="app.loadBudgetIntoWorkspace('${b.id}')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors shadow-sm"><i class="fa-solid fa-pen-to-square"></i> Abrir</button>
+                                    <button onclick="app.deleteSavedBudget('${b.id}')" class="text-slate-300 hover:text-red-500 p-1.5 rounded-md transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            },
+            loadBudgetIntoWorkspace: function(projId) {
+                const b = this.savedBudgets.find(x => x.id === projId);
+                if(!b) return;
+                this.currentProject.items = b.items || [];
+                this.currentProject.loadedId = b.id;
+                this.currentProject.title = b.title;
+                this.currentProject.expenses = b.expenses || [];
+                this.currentProject.profitPercent = b.profitPercent ?? 30;
+                this.autoSaveDraft();
+                
+                // Pre-fill modal data in case they want to resave
+                document.getElementById('save-date').value = b.date || '';
+                document.getElementById('save-client').value = b.client || '';
+                document.getElementById('save-address').value = b.address || '';
+                document.getElementById('save-phone').value = b.phone || '';
+                document.getElementById('save-notes').value = b.notes || '';
+
+                this.navigate('computo');
+                this.showToast('Cómputo cargado.');
+            },
+            deleteSavedBudget: async function(projId) {
+                if(!confirm('¿Eliminar definitivamente este presupuesto guardado?')) return;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'savedBudgets', projId));
+                    if(this.currentProject.loadedId === projId) { this.currentProject.loadedId = null; this.currentProject.title = ''; this.autoSaveDraft(); }
+                    this.showToast('Presupuesto eliminado.');
+                } catch(e){}
+            },
+
+            // --- COMPUTO UI LOGIC ---
+            toggleCategory: function(c) { this.expandedCategories[c] = !this.expandedCategories[c]; this.renderCatalog(document.getElementById('item-search').value); },
+            filterCatalog: function(v) { this.renderCatalog(v); }, filterDatabase: function(v) { this.renderDatabaseTable(v); },
+            toggleItemInProject: function(dbId) {
+                const i = this.currentProject.items.findIndex(x => x.dbId === dbId);
+                if (i > -1) this.currentProject.items.splice(i, 1); else this.currentProject.items.push({...this.database.find(x => x.id === dbId), uid: 'it_'+Math.random(), dbId: dbId, qty: 1});
+                this.autoSaveDraft(); this.renderProjectTable(); this.renderCatalog(document.getElementById('item-search').value);
+            },
+            removeItemFromProject: function(u) { this.currentProject.items = this.currentProject.items.filter(i => i.uid !== u); this.autoSaveDraft(); this.renderProjectTable(); this.renderCatalog(document.getElementById('item-search')?.value || ''); },
+            updateItemQty: function(u, v) { const i = this.currentProject.items.find(x => x.uid === u); if(i) { i.qty = parseFloat(v)||0; this.autoSaveDraft(); this.renderProjectTable(); } },
+            
+            renderCatalog: function(fVal) {
+                const list = document.getElementById('catalog-list'); if(!list) return; list.innerHTML = ''; const f = fVal.toLowerCase(); const cats = [...new Set(this.database.map(i => i.category))].sort();
+                cats.forEach(c => {
+                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)); if(f && !items.length) return; const exp = f ? true : this.expandedCategories[c];
+                    const div = document.createElement('div'); div.className = "border-b border-slate-200";
+                    div.innerHTML = `<button onclick="app.toggleCategory('${c}')" class="w-full flex justify-between p-3.5 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"><span class="truncate">${c}</span><i class="fa-solid ${exp ? 'fa-chevron-down text-emerald-500' : 'fa-chevron-right text-slate-400'} transition-transform"></i></button>`;
+                    if(exp) {
+                        let h = `<div class="bg-slate-50 divide-y divide-slate-100/50 pb-2">`;
+                        items.forEach(i => {
+                            const sel = this.currentProject.items.some(x => x.dbId === i.id);
+                            h += `<div onclick="app.toggleItemInProject('${i.id}')" class="px-4 py-2.5 flex items-start gap-3 hover:bg-emerald-50 cursor-pointer text-[11px] font-medium transition-colors ${sel?'bg-emerald-100 text-emerald-900':'text-slate-600'}"><i class="fa-solid ${sel ? 'fa-square-check text-emerald-600' : 'fa-square text-slate-300'} mt-0.5 text-sm"></i><span class="flex-1 leading-tight">${i.name}</span></div>`;
+                        });
+                        h += `</div>`; div.innerHTML += h;
+                    }
+                    list.appendChild(div);
+                });
+            },
+
+            setViewMode: function(m) { this.viewMode = m; ['TOTAL','MATERIALES','MANO DE OBRA','PLANILLA'].forEach(x => { const b = document.getElementById(`btn-mode-${x.replace(/ /g, '')}`); if(b) b.className = x === m ? "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm font-bold" : "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200 text-slate-600 font-bold"; }); this.renderProjectTable(); },
+
+            renderProjectTable: function() {
+                const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
+                const m = this.viewMode; const hm = m==='MANO DE OBRA'||m==='PLANILLA'; const hmo = m==='MATERIALES'||m==='PLANILLA'; const ht = m==='PLANILLA';
+                th.innerHTML = `
+                    <tr>
+                        <th rowspan="2" class="p-2.5 text-center bg-[#f8fafc]">ÍTEM / DESCRIPCIÓN</th>
+                        <th rowspan="2" class="p-2.5 text-center w-16 bg-[#f8fafc]">UND</th>
+                        <th rowspan="2" class="p-2.5 text-center w-24 bg-[#f8fafc]">CANT.</th>
+                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mat ${hm?'hidden':''}">COSTO MATERIALES</th>
+                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mo ${hmo?'hidden':''}">COSTO M. OBRA</th>
+                        <th rowspan="2" class="p-2.5 text-center w-28 bg-[#f8fafc] col-subtot ${ht?'hidden':''}">SUBTOTAL</th>
+                        <th rowspan="2" class="p-2.5 text-center w-12 bg-[#f8fafc] print-hide"></th>
+                    </tr>
+                    <tr>
+                        <th class="p-1.5 text-center bg-[#f8fafc] font-semibold text-[10px] w-24 col-mat ${hm?'hidden':''}">UNITARIO</th>
+                        <th class="p-1.5 text-center bg-[#f8fafc] font-semibold text-[10px] w-28 col-mat ${hm?'hidden':''}">SUBTOTAL</th>
+                        <th class="p-1.5 text-center bg-[#f8fafc] font-semibold text-[10px] w-24 col-mo ${hmo?'hidden':''}">UNITARIO</th>
+                        <th class="p-1.5 text-center bg-[#f8fafc] font-semibold text-[10px] w-28 col-mo ${hmo?'hidden':''}">SUBTOTAL</th>
+                    </tr>
+                `;
+                const g = {}; this.currentProject.items.forEach(i => { const dbI = this.database.find(x => x.id === i.dbId); if(dbI) { i.matPrice = dbI.matPrice; i.laborPrice = dbI.laborPrice; } if(!g[i.category]) g[i.category] = []; g[i.category].push(i); });
+                tb.innerHTML = ''; let tm=0, to=0;
+                
+                if(this.currentProject.items.length === 0) { tb.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-slate-400 font-medium">Hoja en blanco. Selecciona ítems del catálogo para comenzar.</td></tr>`; }
+
+                Object.keys(g).sort().forEach(c => {
+                    tb.innerHTML += `<tr><td colspan="10" class="p-3 font-extrabold text-emerald-900 text-[11px] bg-emerald-100/50 uppercase tracking-wider">${c}</td></tr>`;
+                    g[c].forEach(i => {
+                        const sm = i.matPrice * i.qty; const so = i.laborPrice * i.qty; const st = sm + so; tm += sm; to += so;
+                        tb.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition-colors group">
+                                <td class="p-2.5 text-slate-700 font-medium">${i.name}</td>
+                                <td class="p-2.5 text-center text-slate-400 font-bold text-[10px]">${i.unit}</td>
+                                <td class="p-1.5 text-center"><input type="number" step="0.1" class="w-full text-center outline-none bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded py-1 font-bold text-slate-800 transition-all border border-transparent focus:border-emerald-300" value="${i.qty}" onchange="app.updateItemQty('${i.uid}', this.value)"></td>
+                                <td class="p-2.5 text-right text-slate-500 col-mat ${hm?'hidden':''}">${this.formatCurrency(i.matPrice)}</td>
+                                <td class="p-2.5 text-right font-semibold text-slate-700 col-mat ${hm?'hidden':''}">${this.formatCurrency(sm)}</td>
+                                <td class="p-2.5 text-right text-slate-500 col-mo ${hmo?'hidden':''}">${this.formatCurrency(i.laborPrice)}</td>
+                                <td class="p-2.5 text-right font-semibold text-slate-700 col-mo ${hmo?'hidden':''}">${this.formatCurrency(so)}</td>
+                                <td class="p-2.5 text-right font-black text-emerald-800 bg-emerald-50/30 col-subtot ${ht?'hidden':''}">${this.formatCurrency(st)}</td>
+                                <td class="p-2 text-center print-hide w-10"><button onclick="app.removeItemFromProject('${i.uid}')" class="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash-can"></i></button></td>
+                            </tr>
+                        `;
+                    });
+                });
+                if(document.getElementById('summary-mat')) { document.getElementById('summary-mat').textContent = this.formatCurrency(tm); document.getElementById('summary-mo').textContent = this.formatCurrency(to); document.getElementById('summary-total').textContent = this.formatCurrency(tm + to); }
+            },
+
+            renderDatabaseTable: function(fVal) {
+                const tb = document.getElementById('db-items-table'); if(!tb) return; tb.innerHTML = ''; const f = fVal.toLowerCase();
+                this.database.filter(i => i.name.toLowerCase().includes(f)).forEach(i => {
+                    tb.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-4 font-semibold text-slate-700">${i.name} <span class="block text-[9px] text-emerald-600 font-bold uppercase tracking-wider mt-0.5">${i.category}</span></td>
+                            <td class="p-4 text-center text-slate-400 font-bold">${i.unit}</td>
+                            <td class="p-3"><input type="number" class="w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${i.matPrice}" onchange="app.updateDbPrice('${i.id}', 'matPrice', this.value)"></td>
+                            <td class="p-3"><input type="number" class="w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${i.laborPrice}" onchange="app.updateDbPrice('${i.id}', 'laborPrice', this.value)"></td>
+                        </tr>
+                    `;
+                });
+            },
+
+
+            // --- GASTOS Y RENTABILIDAD ---
+            getProjectBaseTotals: function() {
+                let mat = 0, mo = 0;
+                (this.currentProject.items || []).forEach(i => {
+                    const dbI = this.database.find(x => x.id === i.dbId) || i;
+                    mat += (Number(dbI.matPrice) || 0) * (Number(i.qty) || 0);
+                    mo += (Number(dbI.laborPrice) || 0) * (Number(i.qty) || 0);
+                });
+                return { mat, mo, direct: mat + mo };
+            },
+            ensureDefaultExpenses: function() {
+                if(!this.currentProject.expenses || this.currentProject.expenses.length === 0) {
+                    this.currentProject.expenses = [
+                        { id:'exp_'+Math.random(), category:'Combustible', detail:'Traslados de cuadrilla / camioneta', qty:1, unitCost:0 },
+                        { id:'exp_'+Math.random(), category:'Peajes', detail:'Autopistas / accesos', qty:1, unitCost:0 },
+                        { id:'exp_'+Math.random(), category:'Insumos', detail:'Bolsas, cinta, guantes, discos, tornillos, etc.', qty:1, unitCost:0 },
+                        { id:'exp_'+Math.random(), category:'Fletes', detail:'Entrega/retiro de materiales', qty:1, unitCost:0 },
+                        { id:'exp_'+Math.random(), category:'Herramientas', detail:'Alquiler, desgaste o reposición', qty:1, unitCost:0 },
+                        { id:'exp_'+Math.random(), category:'Imprevistos', detail:'Margen técnico de obra', qty:1, unitCost:0 }
+                    ];
+                }
+            },
+            getExpensesTotal: function() { return (this.currentProject.expenses || []).reduce((a,e)=> a + ((Number(e.qty)||0) * (Number(e.unitCost)||0)), 0); },
+            getProfitAmount: function() { const b = this.getProjectBaseTotals(); return (b.direct + this.getExpensesTotal()) * ((Number(this.currentProject.profitPercent)||0)/100); },
+            getFinalPrice: function() { const b = this.getProjectBaseTotals(); return b.direct + this.getExpensesTotal() + this.getProfitAmount(); },
+            renderExpenses: function() {
+                this.ensureDefaultExpenses();
+                const tb = document.getElementById('expenses-table'); if(!tb) return;
+                tb.innerHTML = '';
+                this.currentProject.expenses.forEach(e => {
+                    const total = (Number(e.qty)||0) * (Number(e.unitCost)||0);
+                    tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.category||''}" onchange="app.updateExpense('${e.id}','category',this.value)"></td><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2" value="${e.detail||''}" onchange="app.updateExpense('${e.id}','detail',this.value)"></td><td class="p-2 text-center"><input type="number" class="w-20 text-center border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.qty||0}" onchange="app.updateExpense('${e.id}','qty',this.value)"></td><td class="p-2 text-right"><input type="number" class="w-32 text-right border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.unitCost||0}" onchange="app.updateExpense('${e.id}','unitCost',this.value)"></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><button onclick="app.removeExpense('${e.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
+                });
+                const pp = document.getElementById('profit-percent'); if(pp) pp.value = this.currentProject.profitPercent ?? 30;
+                this.renderProfitSummary();
+            },
+            renderProfitSummary: function() {
+                const box = document.getElementById('profit-summary'); if(!box) return;
+                const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal(), prof = this.getProfitAmount(), final = this.getFinalPrice();
+                box.innerHTML = `<div class="flex justify-between"><span>Materiales</span><b>${this.formatCurrency(b.mat)}</b></div><div class="flex justify-between"><span>Mano de obra / jornales</span><b>${this.formatCurrency(b.mo)}</b></div><div class="flex justify-between"><span>Gastos adicionales</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between border-t border-slate-200 pt-2"><span>Costo total</span><b>${this.formatCurrency(b.direct + exp)}</b></div><div class="flex justify-between text-emerald-700"><span>Rentabilidad</span><b>${this.formatCurrency(prof)}</b></div>`;
+                const fp = document.getElementById('final-price-box'); if(fp) fp.textContent = this.formatCurrency(final);
+            },
+            addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); },
+            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); },
+            removeExpense: function(id) { this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); },
+            updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderProfitSummary(); },
+
+            // --- IMPRESION ---
+            openPrintModal: function() { document.getElementById('print-modal').className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"; },
+            closePrintModal: function() { document.getElementById('print-modal').className="hidden"; },
+
+            printSpecific: function(type) {
+                const b = this.getProjectBaseTotals(); const exp = this.getExpensesTotal(); const prof = this.getProfitAmount(); const final = this.getFinalPrice();
+                const title = type === 'gastos' ? 'Detalle de Gastos de Obra' : type === 'rentabilidad' ? 'Rentabilidad del Presupuesto' : 'Presupuesto de Obra';
+                let rows = '';
+                if(type === 'gastos') {
+                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2>`;
+                } else if(type === 'rentabilidad') {
+                    rows = `<table><tbody><tr><td>Materiales</td><td>${this.formatCurrency(b.mat)}</td></tr><tr><td>Mano de obra / jornales</td><td>${this.formatCurrency(b.mo)}</td></tr><tr><td>Gastos adicionales</td><td>${this.formatCurrency(exp)}</td></tr><tr><td>Costo total</td><td>${this.formatCurrency(b.direct+exp)}</td></tr><tr><td>Rentabilidad (${this.currentProject.profitPercent||0}%)</td><td>${this.formatCurrency(prof)}</td></tr><tr><td><b>Precio sugerido</b></td><td><b>${this.formatCurrency(final)}</b></td></tr></tbody></table>`;
+                } else {
+                    rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const mat=(dbI.matPrice||0)*(i.qty||0); const mo=(dbI.laborPrice||0)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
+                }
+                const w = window.open('', '_blank');
+                w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
+                w.document.close(); w.focus(); setTimeout(()=>w.print(), 250);
+            },
+            executePrint: function() {
+                ['unit','mo','mat','subtot'].forEach(k => document.body.classList.toggle(`print-hide-${k}`, document.getElementById(`print-opt-${k}`).checked));
+                document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Obra';
+                document.getElementById('print-header-sub').textContent = this.userProfile.companySubtitle || '';
+                
+                // Mostrar datos extraídos del guardado Sismat si existen (Cliente, etc) en la impresión
+                let contactInfo = this.userProfile.companyContact || '';
+                const client = document.getElementById('save-client')?.value;
+                if(client) contactInfo += `\n\nCliente: ${client}`;
+                const address = document.getElementById('save-address')?.value;
+                if(address) contactInfo += `\nObra: ${address}`;
+
+                document.getElementById('print-header-contact').textContent = contactInfo;
+                document.getElementById('print-header-date').textContent = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
+                
+                const img = document.getElementById('print-logo-img'); if(this.userProfile.companyLogo) { img.src = this.userProfile.companyLogo; img.style.display = 'block'; } else img.style.display = 'none';
+                this.closePrintModal(); setTimeout(() => window.print(), 100);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+        document.addEventListener('contextmenu', e => e.preventDefault()); document.addEventListener('keydown', e => { if(e.key==='F12' || e.keyCode===123 || (e.ctrlKey && e.shiftKey && (e.key==='I' || e.key==='J')) || (e.ctrlKey && (e.key==='U' || e.key==='C'))) { e.preventDefault(); return false; } });
+    </script>
+</body>
+</html>
