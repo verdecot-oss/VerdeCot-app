@@ -637,6 +637,20 @@
                                     <div><label class="block text-xs font-bold text-slate-500 mb-1">Empresa / Marca</label><input type="text" id="prof-comp-name" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
                                     <div><label class="block text-xs font-bold text-slate-500 mb-1">Subtítulo</label><input type="text" id="prof-comp-subtitle" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500"></div>
                                     <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Datos de Contacto (Cabecera PDF)</label><textarea id="prof-comp-contact" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-500 resize-none"></textarea></div>
+                                    <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Logo de la empresa para PDF</label>
+                                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                            <div class="w-32 h-24 bg-white border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+                                                <img id="prof-logo-preview" src="" alt="Logo de empresa" class="max-w-full max-h-full object-contain hidden">
+                                                <span id="prof-logo-placeholder" class="text-[11px] text-slate-400 font-bold text-center px-3">Sin logo cargado</span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <input type="file" id="prof-logo-input" accept="image/png,image/jpeg,image/webp" onchange="app.handleLogoUpload(event)" class="w-full text-xs text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                                                <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">Recomendado: PNG o JPG horizontal, fondo transparente o blanco. La app lo reduce automáticamente para que no pese demasiado.</p>
+                                                <button type="button" onclick="app.removeCompanyLogo()" class="mt-3 text-xs font-bold text-red-600 hover:text-red-700"><i class="fa-solid fa-trash-can mr-1"></i> Quitar logo</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -816,15 +830,71 @@
             loadProfileData: async function() { if(!this.user) return; try { const docSnap = await getDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile')); if (docSnap.exists()) { this.userProfile = { ...this.userProfile, ...docSnap.data() }; } } catch(e) {} },
             populateProfileForm: function() {
                 if(!this.user) return;
-                ['name','phone','companyName','companySubtitle','companyContact'].forEach(f => { if(this.userProfile[f]) { const el = document.getElementById('prof-'+(f==='companyName'?'comp-name':f==='companySubtitle'?'comp-subtitle':f==='companyContact'?'comp-contact':f)); if(el) el.value = this.userProfile[f]; } });
+                ['name','phone','companyName','companySubtitle','companyContact'].forEach(f => {
+                    if(this.userProfile[f]) {
+                        const el = document.getElementById('prof-'+(f==='companyName'?'comp-name':f==='companySubtitle'?'comp-subtitle':f==='companyContact'?'comp-contact':f));
+                        if(el) el.value = this.userProfile[f];
+                    }
+                });
+                this.renderLogoPreview();
+            },
+            renderLogoPreview: function() {
+                const img = document.getElementById('prof-logo-preview');
+                const ph = document.getElementById('prof-logo-placeholder');
+                if(!img || !ph) return;
+                if(this.userProfile.companyLogo) {
+                    img.src = this.userProfile.companyLogo;
+                    img.classList.remove('hidden');
+                    ph.classList.add('hidden');
+                } else {
+                    img.src = '';
+                    img.classList.add('hidden');
+                    ph.classList.remove('hidden');
+                }
+            },
+            handleLogoUpload: function(event) {
+                const file = event.target.files && event.target.files[0];
+                if(!file) return;
+                if(!file.type.startsWith('image/')) { this.showToast('El archivo debe ser una imagen.'); return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onload = () => {
+                        const maxW = 500, maxH = 300;
+                        let { width, height } = image;
+                        const ratio = Math.min(maxW / width, maxH / height, 1);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(image, 0, 0, width, height);
+                        this.userProfile.companyLogo = canvas.toDataURL('image/jpeg', 0.82);
+                        this.renderLogoPreview();
+                        this.showToast('Logo cargado. No olvides guardar cambios.');
+                    };
+                    image.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            },
+            removeCompanyLogo: function() {
+                this.userProfile.companyLogo = '';
+                const input = document.getElementById('prof-logo-input');
+                if(input) input.value = '';
+                this.renderLogoPreview();
+                this.showToast('Logo quitado. No olvides guardar cambios.');
             },
             saveProfileData: async function() {
                 if(!this.user) return;
                 const u = {
                     name: document.getElementById('prof-name').value.trim(), phone: document.getElementById('prof-phone').value.trim(),
-                    companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim()
+                    companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim(),
+                    companyLogo: this.userProfile.companyLogo || ''
                 };
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado.'); } catch(e) {}
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
             },
 
             // --- DATABASE & INDICES ---
