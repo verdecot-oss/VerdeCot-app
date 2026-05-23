@@ -300,13 +300,12 @@
     <header class="bg-emerald-50 border-b border-emerald-200 shadow-sm z-10 flex flex-col print-hide relative">
         <div class="px-5 h-16 flex items-center justify-between">
             <div class="flex items-center gap-8">
-                <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('panel')">
+                <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('computo')">
                     <i class="fa-solid fa-leaf text-emerald-600 text-3xl"></i>
                     <h1 class="text-3xl font-black tracking-tighter" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-500">Cot</span></h1>
                 </div>
                 <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
-                    <button onclick="app.navigate('panel')" id="nav-panel" class="text-emerald-700 transition-colors">Panel Principal</button>
-                    <button onclick="app.navigate('computo')" id="nav-computo" class="hover:text-emerald-700 transition-colors">Cómputo</button>
+                    <button onclick="app.navigate('computo')" id="nav-computo" class="text-emerald-700 transition-colors hover:text-emerald-800">Cómputo</button>
                     <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Costos</button>
                     <button onclick="app.navigate('indices')" id="nav-indices" class="hover:text-emerald-700 transition-colors">Índices</button>
                 </nav>
@@ -474,6 +473,115 @@
         </div>
     </template>
 
+    <!-- VISTA MIS COSTOS (BASE DE DATOS EDITABLE) -->
+    <template id="view-database">
+        <div class="p-4 md:p-6 w-full h-full flex flex-col fade-in">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col flex-1 overflow-hidden">
+                <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                    <h2 class="font-bold text-lg"><i class="fa-solid fa-database mr-2 text-slate-400"></i> Mi Catálogo de Costos</h2>
+                    <button onclick="app.openNewItemModal()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-colors"><i class="fa-solid fa-plus mr-1"></i> Nuevo Ítem</button>
+                </div>
+                <div class="p-4 border-b border-slate-200 bg-slate-50">
+                    <div class="relative w-full md:w-1/2">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="db-search" placeholder="Buscar material o tarea para editar..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:border-emerald-500" onkeyup="app.renderDatabase()">
+                    </div>
+                </div>
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 shadow-sm">
+                            <tr>
+                                <th class="p-3">Categoría</th>
+                                <th class="p-3">Descripción</th>
+                                <th class="p-3 text-center">Unidad</th>
+                                <th class="p-3 text-right">Costo Material ($)</th>
+                                <th class="p-3 text-right">Costo Mano Obra ($)</th>
+                                <th class="p-3 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Nuevo Ítem -->
+        <div id="new-item-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex-col items-center justify-center p-4 backdrop-blur-sm print-hide">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden fade-in border border-slate-200">
+                <div class="bg-emerald-800 border-b border-emerald-900 px-6 py-4 flex justify-between items-center text-white">
+                    <h3 class="text-lg font-bold">Agregar Ítem al Catálogo</h3>
+                    <button onclick="document.getElementById('new-item-modal').classList.add('hidden')" class="text-emerald-200 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Categoría</label>
+                        <input type="text" id="ni-cat" placeholder="Ej: 01 - Trabajos Preliminares" class="w-full border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Nombre de la Tarea/Material</label>
+                        <input type="text" id="ni-name" placeholder="Ej: Poda de Palmera" class="w-full border border-slate-300 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-500 font-medium">
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Unidad</label>
+                            <select id="ni-unit" class="w-full border border-slate-300 rounded-xl px-2 py-2 text-sm outline-none focus:border-emerald-500 font-medium">
+                                <option value="U">U</option><option value="M2">M2</option><option value="M3">M3</option><option value="ML">ML</option><option value="GL">GL</option><option value="KG">KG</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Costo Material</label>
+                            <input type="number" id="ni-mat" value="0" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none text-right focus:border-emerald-500 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Costo M.O.</label>
+                            <input type="number" id="ni-mo" value="0" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none text-right focus:border-emerald-500 font-medium">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                    <button onclick="document.getElementById('new-item-modal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl">Cancelar</button>
+                    <button onclick="app.saveNewItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-md">Guardar Ítem</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- VISTA ÍNDICES (AJUSTE POR INFLACIÓN) -->
+    <template id="view-indices">
+        <div class="p-6 w-full max-w-3xl mx-auto h-full overflow-y-auto fade-in">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-emerald-800 p-8 text-white text-center">
+                    <i class="fa-solid fa-arrow-trend-up text-5xl mb-4 text-emerald-300"></i>
+                    <h2 class="text-3xl font-bold">Actualización por Índices</h2>
+                    <p class="text-emerald-100 text-sm mt-2 font-medium">Ajusta toda tu base de datos utilizando índices inflacionarios del sector (CAC / INDEC).</p>
+                </div>
+                <div class="p-8 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                            <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Aumento de Materiales (%)</label>
+                            <div class="relative">
+                                <input type="number" id="idx-mat" placeholder="Ej: 8.5" class="w-full text-3xl p-3 border border-slate-300 rounded-xl outline-none focus:border-emerald-500 font-bold bg-white text-slate-800">
+                                <span class="absolute right-4 top-4 text-2xl text-slate-400 font-bold">%</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase">Multiplicador global de insumos</p>
+                        </div>
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                            <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Aumento de Mano de Obra (%)</label>
+                            <div class="relative">
+                                <input type="number" id="idx-mo" placeholder="Ej: 12" class="w-full text-3xl p-3 border border-slate-300 rounded-xl outline-none focus:border-emerald-500 font-bold bg-white text-slate-800">
+                                <span class="absolute right-4 top-4 text-2xl text-slate-400 font-bold">%</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-2 font-bold uppercase">Multiplicador global de trabajo</p>
+                        </div>
+                    </div>
+                    <button onclick="app.applyIndices()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-lg transition-all text-lg uppercase tracking-wide flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Aplicar Actualización en Lote
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- VISTA PERFIL -->
     <template id="view-perfil">
         <div class="w-full h-full overflow-y-auto fade-in bg-[#f4f7f6]">
@@ -518,14 +626,10 @@
         </div>
     </template>
 
-    <template id="view-panel"><div class="p-8 text-center"><h2 class="text-2xl font-bold">Panel Principal</h2><p class="mt-4">Navega desde el menú superior a Cómputo para usar la herramienta completa.</p></div></template>
-    <template id="view-database"><div class="p-8 text-center"><h2 class="text-2xl font-bold">Base de Datos</h2><p class="mt-4">Vista en construcción. Ve a "Cómputo".</p></div></template>
-    <template id="view-indices"><div class="p-8 text-center"><h2 class="text-2xl font-bold">Ajuste por Índices</h2><p class="mt-4">Vista en construcción. Ve a "Cómputo".</p></div></template>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, writeBatch, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAtsboZ8Fnn8PEg8Z99iQUOJhJy4DRyn5g", authDomain: "verdecot-1db0d.firebaseapp.com", projectId: "verdecot-1db0d", storageBucket: "verdecot-1db0d.firebasestorage.app", messagingSenderId: "260889721477", appId: "1:260889721477:web:0139c4c1ac5bd5391147ec" };
         const appInstance = initializeApp(firebaseConfig); 
@@ -547,6 +651,7 @@
             database: [], 
             currentProject: { items: [], jornales: [], gastos: { gg: 10, ben: 15, imp: 21 }, title: '' }, 
             expandedCategories: { '01 - Trabajos Preliminares': true }, 
+            currentTab: 'computo',
             
             init: function() {
                 this.bindAuthEvents();
@@ -600,14 +705,26 @@
             enterPortal: function() { this.loadDatabase(); this.navigate('computo'); },
 
             navigate: function(viewId) {
+                this.currentTab = viewId;
                 document.getElementById('main-content').innerHTML = document.getElementById(`view-${viewId}`).innerHTML;
+                
+                // Actualizar estilos del menú de navegación
+                ['nav-computo', 'nav-database', 'nav-indices'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        if(id === `nav-${viewId}`) { el.classList.add('text-emerald-800'); el.classList.remove('text-emerald-700'); }
+                        else { el.classList.add('text-emerald-700'); el.classList.remove('text-emerald-800'); }
+                    }
+                });
+
                 if (viewId === 'computo') { 
                     this.renderCatalog(''); this.renderProjectTable(); this.renderJornales(); this.updateGastos();
                 }
+                if (viewId === 'database') { this.renderDatabase(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); }
             },
 
-            // --- LÓGICA DE PESTAÑAS INTERNAS ---
+            // --- LÓGICA DE PESTAÑAS INTERNAS DE CÓMPUTO ---
             setProjectTab: function(tab) {
                 ['computo', 'jornales', 'gastos'].forEach(t => {
                     const btn = document.getElementById(`ptab-${t}`);
@@ -635,7 +752,14 @@
                         const batch = writeBatch(db); INITIAL_CATALOG.forEach(i => batch.set(doc(catRef, i.id), i)); await batch.commit(); 
                     } else {
                         this.database = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b)=>a.category.localeCompare(b.category));
-                        this.renderCatalog(document.getElementById('item-search')?.value || '');
+                        
+                        // Refrescar vistas si están activas
+                        if(this.currentTab === 'computo' && document.getElementById('catalog-list')) {
+                            this.renderCatalog(document.getElementById('item-search')?.value || '');
+                        }
+                        if(this.currentTab === 'database' && document.getElementById('db-table-body')) {
+                            this.renderDatabase();
+                        }
                     }
                 });
             },
@@ -684,7 +808,7 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="p-2 text-slate-700">${i.name}</td>
                                 <td class="p-2 text-center text-slate-500 font-bold text-[10px]">${i.unit}</td>
-                                <td class="p-2 text-center"><input type="number" step="0.1" class="w-16 text-center border rounded py-1 font-bold" value="${i.qty}" onchange="app.updateItemQty('${i.uid}', this.value)"></td>
+                                <td class="p-2 text-center"><input type="number" step="0.1" class="w-16 text-center border rounded py-1 font-bold bg-transparent" value="${i.qty}" onchange="app.updateItemQty('${i.uid}', this.value)"></td>
                                 <td class="p-2 text-right text-slate-500">${this.formatCurrency(i.matPrice)}</td>
                                 <td class="p-2 text-right text-slate-500">${this.formatCurrency(i.laborPrice)}</td>
                                 <td class="p-2 text-right font-bold text-emerald-800">${this.formatCurrency(sm + so)}</td>
@@ -818,8 +942,126 @@
                 try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = u; this.showToast('Perfil y Logo actualizados.'); } catch(e) {}
             },
 
+            // --- LÓGICA MIS COSTOS (BASE DE DATOS) ---
+            renderDatabase: function() {
+                const tb = document.getElementById('db-table-body');
+                if(!tb) return;
+                const fVal = (document.getElementById('db-search')?.value || '').toLowerCase();
+                
+                let html = '';
+                this.database.filter(i => i.name.toLowerCase().includes(fVal) || i.category.toLowerCase().includes(fVal)).forEach(item => {
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-3 text-[10px] font-bold uppercase text-slate-400 tracking-wide">${item.category}</td>
+                            <td class="p-3 font-semibold text-slate-700">${item.name}</td>
+                            <td class="p-3 text-center text-slate-500 font-bold">${item.unit}</td>
+                            <td class="p-3">
+                                <input type="number" value="${item.matPrice}" onblur="app.updateDbItem('${item.id}', 'matPrice', this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-right font-semibold focus:border-emerald-500 outline-none transition-shadow">
+                            </td>
+                            <td class="p-3">
+                                <input type="number" value="${item.laborPrice}" onblur="app.updateDbItem('${item.id}', 'laborPrice', this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-right font-semibold focus:border-emerald-500 outline-none transition-shadow">
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="app.deleteDbItem('${item.id}')" class="text-slate-300 hover:text-red-500 p-1.5 rounded transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                if(html === '') html = '<tr><td colspan="6" class="p-6 text-center text-slate-400">No se encontraron ítems.</td></tr>';
+                tb.innerHTML = html;
+            },
+            updateDbItem: async function(id, field, value) {
+                if(!this.user) return;
+                const num = parseFloat(value) || 0;
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'catalog', id), { [field]: num });
+                    this.showToast('Precio actualizado en la nube');
+                } catch(e) { console.error(e); }
+            },
+            deleteDbItem: async function(id) {
+                if(!this.user || !confirm('¿Estás seguro de eliminar este material de tu base de datos?')) return;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'catalog', id));
+                    this.showToast('Ítem eliminado correctamente');
+                } catch(e) { console.error(e); }
+            },
+            openNewItemModal: function() {
+                document.getElementById('ni-cat').value = '';
+                document.getElementById('ni-name').value = '';
+                document.getElementById('ni-unit').value = 'U';
+                document.getElementById('ni-mat').value = 0;
+                document.getElementById('ni-mo').value = 0;
+                document.getElementById('new-item-modal').classList.remove('hidden');
+                document.getElementById('new-item-modal').classList.add('flex');
+            },
+            saveNewItem: async function() {
+                if(!this.user) return;
+                const cat = document.getElementById('ni-cat').value.trim();
+                const name = document.getElementById('ni-name').value.trim();
+                if(!cat || !name) { this.showToast('La categoría y el nombre son obligatorios'); return; }
+                
+                const id = 'item_' + Date.now();
+                const newItemData = {
+                    id: id,
+                    category: cat,
+                    name: name,
+                    unit: document.getElementById('ni-unit').value,
+                    matPrice: parseFloat(document.getElementById('ni-mat').value) || 0,
+                    laborPrice: parseFloat(document.getElementById('ni-mo').value) || 0
+                };
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'catalog', id), newItemData);
+                    document.getElementById('new-item-modal').classList.add('hidden');
+                    this.showToast('Ítem agregado al catálogo');
+                } catch(e) { console.error(e); }
+            },
+
+            // --- LÓGICA ÍNDICES (INFLACIÓN) ---
+            applyIndices: async function() {
+                if(!this.user) return;
+                const matInp = document.getElementById('idx-mat').value;
+                const moInp = document.getElementById('idx-mo').value;
+                if(!matInp && !moInp) { this.showToast('Ingresa al menos un porcentaje'); return; }
+
+                const matPerc = 1 + (parseFloat(matInp) || 0) / 100;
+                const moPerc = 1 + (parseFloat(moInp) || 0) / 100;
+                
+                try {
+                    const batch = writeBatch(db);
+                    this.database.forEach(item => {
+                        batch.update(doc(db, 'artifacts', appId, 'users', this.user.uid, 'catalog', item.id), {
+                            matPrice: Math.round(item.matPrice * matPerc),
+                            laborPrice: Math.round(item.laborPrice * moPerc)
+                        });
+                    });
+                    await batch.commit();
+                    document.getElementById('idx-mat').value = '';
+                    document.getElementById('idx-mo').value = '';
+                    this.showToast('Toda la base de datos fue actualizada');
+                } catch(e) { console.error(e); this.showToast('Error al aplicar índices'); }
+            },
+
             // --- IMPRESIÓN ---
+            openPrintModal: function() {
+                document.getElementById('print-modal').classList.remove('hidden');
+                document.getElementById('print-modal').classList.add('flex');
+            },
+            closePrintModal: function() {
+                document.getElementById('print-modal').classList.add('hidden');
+                document.getElementById('print-modal').classList.remove('flex');
+            },
             executePrint: function() {
+                this.closePrintModal();
+                
+                // Configurar visibilidad de columnas según checkbox
+                const bodyClass = document.body.classList;
+                document.getElementById('print-opt-unit').checked ? bodyClass.add('print-hide-unit') : bodyClass.remove('print-hide-unit');
+                document.getElementById('print-opt-mo').checked ? bodyClass.add('print-hide-mo') : bodyClass.remove('print-hide-mo');
+                document.getElementById('print-opt-mat').checked ? bodyClass.add('print-hide-mat') : bodyClass.remove('print-hide-mat');
+                document.getElementById('print-opt-subtot').checked ? bodyClass.add('print-hide-subtot') : bodyClass.remove('print-hide-subtot');
+
+                // Cabecera membrete
                 document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Obra';
                 document.getElementById('print-header-sub').textContent = this.userProfile.companySubtitle || '';
                 document.getElementById('print-header-contact').textContent = this.userProfile.companyContact || '';
