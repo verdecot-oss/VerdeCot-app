@@ -323,7 +323,7 @@
     <header class="bg-emerald-50 border-b border-emerald-200 shadow-sm z-10 flex flex-col print-hide relative">
         <div class="px-5 h-16 flex items-center justify-between">
             <div class="flex items-center gap-8">
-                <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('panel')">
+                <div class="flex items-center gap-2 text-emerald-900 cursor-pointer" onclick="app.navigate('computo')">
                     <div class="relative flex items-center justify-center mr-1">
                         <i class="fa-solid fa-leaf text-emerald-600 text-3xl drop-shadow-sm"></i>
                         <i class="fa-solid fa-gear text-emerald-950 text-[10px] absolute -bottom-0.5 -right-1.5 bg-emerald-50 rounded-full border-2 border-emerald-200 w-[18px] h-[18px] flex items-center justify-center"></i>
@@ -332,7 +332,6 @@
                 </div>
                 
                 <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
-                    <button onclick="app.navigate('panel')" id="nav-panel" class="text-emerald-700 transition-colors">Panel Principal</button>
                     <button onclick="app.navigate('computo')" id="nav-computo" class="hover:text-emerald-700 transition-colors">Cómputo</button>
                     <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Costos</button>
                     <button onclick="app.navigate('gastos')" id="nav-gastos" class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
@@ -377,8 +376,7 @@
     </header>
 
     <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm">
-        <button onclick="app.navigate('panel')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-chart-pie mb-1 text-sm block"></i> Panel</button>
-        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
+        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
         <button onclick="app.navigate('database')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Costos</button>
     </div>
 
@@ -561,11 +559,7 @@
         </div>
     </template>
 
-    <template id="view-database">...</template>
-    <template id="view-indices">...</template>
-    <template id="view-perfil">...</template>
-
-    <!-- (Se incluyen las plantillas completas para que el archivo funcione perfecto) -->
+    <!-- Plantillas completas de la app -->
     <template id="view-database">
         <div class="p-4 md:p-6 w-full h-full fade-in max-w-5xl mx-auto">
             <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
@@ -579,18 +573,8 @@
                         <input type="text" placeholder="Buscar material o tarea..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl outline-none focus:ring-4 focus:ring-emerald-500/30 transition-all font-medium border-0" onkeyup="app.filterDatabase(this.value)">
                     </div>
                 </div>
-                <div class="flex-1 overflow-auto custom-scrollbar">
-                    <table class="w-full text-xs text-left min-w-[500px]">
-                        <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm border-b border-slate-200 uppercase tracking-wider text-[10px]">
-                            <tr>
-                                <th class="p-4">Descripción del Ítem</th>
-                                <th class="p-4 text-center">Und.</th>
-                                <th class="p-4 text-right w-32">Material ($)</th>
-                                <th class="p-4 text-right w-32">M. Obra ($)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="db-items-table" class="divide-y divide-slate-100"></tbody>
-                    </table>
+                <div class="flex-1 overflow-auto custom-scrollbar bg-slate-50">
+                    <div id="db-items-table" class="divide-y divide-slate-200"></div>
                 </div>
             </div>
         </div>
@@ -739,7 +723,7 @@
             },
 
             toggleUserMenu: function(e) { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('hidden'); },
-            enterPortal: function() { document.getElementById('auth-modal').className="hidden"; this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('panel'); },
+            enterPortal: function() { document.getElementById('auth-modal').className="hidden"; this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('computo'); },
             formatCurrency: (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0),
             showToast: function(msg) { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = "bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-3 fade-in z-50"; t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3500); },
             bindAuthEvents: function() {
@@ -798,7 +782,7 @@
             navigate: function(viewId) {
                 const content = document.getElementById('main-content'); const template = document.getElementById(`view-${viewId}`); if (!template) return;
                 content.innerHTML = template.innerHTML;
-                ['panel','computo','database','indices'].forEach(id => {
+                ['computo','database','gastos','indices'].forEach(id => {
                     const btn = document.getElementById(`nav-${id}`);
                     if(btn) btn.className = id === viewId ? "text-emerald-800 font-black transition-colors border-b-[3px] border-emerald-600 pb-1" : "text-emerald-900/60 hover:text-emerald-700 font-bold transition-colors pb-1";
                 });
@@ -815,6 +799,7 @@
                     if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
                 }
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
+                if (viewId === 'gastos') { this.renderExpenses(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
             },
 
@@ -839,7 +824,7 @@
                     name: document.getElementById('prof-name').value.trim(), phone: document.getElementById('prof-phone').value.trim(),
                     companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim()
                 };
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = u; this.showToast('Perfil actualizado.'); } catch(e) {}
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado.'); } catch(e) {}
             },
 
             // --- DATABASE & INDICES ---
@@ -852,10 +837,11 @@
                         this.database = g.map(i => { const o = c[i.id]; return { ...i, matPrice: o?.matPrice ?? i.matPrice, laborPrice: o?.laborPrice ?? i.laborPrice }; }).sort((a,b)=>a.category.localeCompare(b.category));
                         if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
                         if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
+                        if(document.getElementById('project-items-table')) this.renderProjectTable();
                     });
                 });
             },
-            updateDbPrice: async function(id, f, val) { if(!this.user) return; try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); } catch(e){} },
+            updateDbPrice: async function(id, f, val) { if(!this.user) return; const item = this.database.find(x => x.id === id); if(item) item[f] = parseFloat(val)||0; if(document.getElementById('project-items-table')) this.renderProjectTable(); try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); this.showToast('Costo actualizado.'); } catch(e){ this.showToast('No se pudo guardar el costo.'); } },
             applyIndices: async function() {
                 if(!this.user) return; const matPerc = 1 + ((parseFloat(document.getElementById('input-inf-mat').value)||0)/100); const moPerc = 1 + ((parseFloat(document.getElementById('input-inf-mo').value)||0)/100);
                 if(matPerc===1 && moPerc===1) return;
@@ -1107,17 +1093,71 @@
             },
 
             renderDatabaseTable: function(fVal) {
-                const tb = document.getElementById('db-items-table'); if(!tb) return; tb.innerHTML = ''; const f = fVal.toLowerCase();
-                this.database.filter(i => i.name.toLowerCase().includes(f)).forEach(i => {
-                    tb.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-4 font-semibold text-slate-700">${i.name} <span class="block text-[9px] text-emerald-600 font-bold uppercase tracking-wider mt-0.5">${i.category}</span></td>
-                            <td class="p-4 text-center text-slate-400 font-bold">${i.unit}</td>
-                            <td class="p-3"><input type="number" class="w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${i.matPrice}" onchange="app.updateDbPrice('${i.id}', 'matPrice', this.value)"></td>
-                            <td class="p-3"><input type="number" class="w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${i.laborPrice}" onchange="app.updateDbPrice('${i.id}', 'laborPrice', this.value)"></td>
-                        </tr>
+                const wrap = document.getElementById('db-items-table');
+                if(!wrap) return;
+                wrap.innerHTML = '';
+                const f = (fVal || '').toLowerCase().trim();
+                const filtered = this.database.filter(i =>
+                    (i.name || '').toLowerCase().includes(f) ||
+                    (i.category || '').toLowerCase().includes(f)
+                );
+                if(filtered.length === 0) {
+                    wrap.innerHTML = `<div class="p-10 text-center text-slate-400 font-bold">No se encontraron ítems.</div>`;
+                    return;
+                }
+                const cats = [...new Set(filtered.map(i => i.category))].sort();
+                cats.forEach(c => {
+                    const items = filtered.filter(i => i.category === c);
+                    const exp = f ? true : (this.expandedCategories[c] !== false);
+                    const totalMat = items.reduce((a,i)=>a+(Number(i.matPrice)||0),0);
+                    const totalMo = items.reduce((a,i)=>a+(Number(i.laborPrice)||0),0);
+                    const block = document.createElement('div');
+                    block.className = "bg-white";
+                    block.innerHTML = `
+                        <button onclick="app.toggleDbCategory('${c.replace(/'/g,"\\'")}')" class="w-full bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-100 px-4 py-3 flex items-center justify-between text-left transition-colors">
+                            <div>
+                                <div class="text-sm font-black text-emerald-900">${c}</div>
+                                <div class="text-[10px] font-bold text-emerald-700/70 uppercase tracking-wider">${items.length} ítems · Materiales base ${this.formatCurrency(totalMat)} · Mano de obra base ${this.formatCurrency(totalMo)}</div>
+                            </div>
+                            <i class="fa-solid ${exp ? 'fa-chevron-down' : 'fa-chevron-right'} text-emerald-700"></i>
+                        </button>
                     `;
+                    if(exp) {
+                        const table = document.createElement('div');
+                        table.className = "overflow-x-auto";
+                        table.innerHTML = `
+                            <table class="w-full text-xs text-left min-w-[760px]">
+                                <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th class="p-3">Ítem interno</th>
+                                        <th class="p-3 text-center w-20">Und.</th>
+                                        <th class="p-3 text-right w-36">Material ($)</th>
+                                        <th class="p-3 text-right w-36">M. Obra ($)</th>
+                                        <th class="p-3 text-right w-36">Total unitario</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${items.map(i => `
+                                        <tr class="hover:bg-slate-50 transition-colors">
+                                            <td class="p-3 font-semibold text-slate-700">${i.name}</td>
+                                            <td class="p-3 text-center text-slate-400 font-bold">${i.unit}</td>
+                                            <td class="p-2"><input type="number" class="w-full bg-white focus:bg-emerald-50 border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${Number(i.matPrice)||0}" onchange="app.updateDbPrice('${i.id}', 'matPrice', this.value)"></td>
+                                            <td class="p-2"><input type="number" class="w-full bg-white focus:bg-emerald-50 border border-slate-200 rounded-xl px-3 py-2 text-right outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all font-bold text-slate-700" value="${Number(i.laborPrice)||0}" onchange="app.updateDbPrice('${i.id}', 'laborPrice', this.value)"></td>
+                                            <td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency((Number(i.matPrice)||0)+(Number(i.laborPrice)||0))}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                        block.appendChild(table);
+                    }
+                    wrap.appendChild(block);
                 });
+            },
+            toggleDbCategory: function(c) {
+                this.expandedCategories[c] = this.expandedCategories[c] === false ? true : false;
+                const input = document.querySelector('#view-database input');
+                this.renderDatabaseTable(input?.value || '');
             },
 
 
