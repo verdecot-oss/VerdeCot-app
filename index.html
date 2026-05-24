@@ -194,10 +194,16 @@
     <!-- Agregado style inline oscuro por si Tailwind tarda en cargar -->
     <div id="auth-modal" style="background-color: #0f172a;" class="fixed inset-0 bg-slate-900 z-50 overflow-y-auto print-hide scroll-smooth transition-all duration-500">
         <!-- Navbar Superior Landing -->
-        <nav class="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-50 px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-leaf text-emerald-500 text-2xl"></i>
-                <span class="text-2xl font-black tracking-tighter text-white" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-400">Cot</span></span>
+        <nav class="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-50 px-7 md:px-10 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-gear absolute text-white text-[54px] md:text-[62px] opacity-95"></i>
+                    <i class="fa-solid fa-leaf absolute text-emerald-400 text-[34px] md:text-[40px] rotate-[-18deg] drop-shadow-lg"></i>
+                </div>
+                <div class="leading-none">
+                    <span class="block text-4xl md:text-5xl font-black tracking-tighter text-white" style="font-family: 'Montserrat', sans-serif;">Verde<span class="text-emerald-400">Cot</span></span>
+                    <span class="block text-[10px] md:text-xs font-black tracking-[0.24em] uppercase text-white/90 mt-1">Cálculo • Costos • Rentabilidad</span>
+                </div>
             </div>
             <div class="hidden md:flex gap-6">
                 <button onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})" class="text-sm font-bold text-slate-300 hover:text-white transition-colors">Planes y Precios</button>
@@ -263,14 +269,14 @@
                     </div>
                     <!-- Semestral -->
                     <div class="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col hover:border-emerald-500 transition-colors shadow-lg relative">
-                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">-1 MES GRATIS</div>
+                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">Ahorrás 8%</div>
                         <h3 class="text-white font-bold text-xl mb-1">Semestral Pro</h3>
                         <div class="text-4xl font-black text-white mt-4 mb-8">$55.000</div>
                         <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full mt-auto py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Seleccionar</button>
                     </div>
                     <!-- Anual -->
                     <div class="bg-slate-800 rounded-3xl p-8 border border-slate-700 flex flex-col hover:border-emerald-500 transition-colors shadow-lg relative">
-                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">-2 MESES GRATIS</div>
+                        <div class="absolute top-4 right-4 bg-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-1 rounded">Ahorrás 15%</div>
                         <h3 class="text-white font-bold text-xl mb-1">Anual Pro</h3>
                         <div class="text-4xl font-black text-white mt-4 mb-8">$110.000</div>
                         <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full mt-auto py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Seleccionar</button>
