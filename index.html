@@ -633,8 +633,13 @@
                         <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento de Mano de Obra (%)</label>
                         <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
                     </div>
+                    <div class="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl">
+                        <label class="block text-xs font-bold text-emerald-700 mb-2 uppercase tracking-wider">Rentabilidad incluida en el presupuesto (%)</label>
+                        <input type="number" id="input-profit-index" value="30" placeholder="Ej: 30" class="w-full text-2xl p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-emerald-900 transition-all bg-white text-center">
+                        <p class="text-xs text-emerald-800/70 mt-3 font-semibold leading-relaxed">Este porcentaje no aparece como ítem: se distribuye dentro de los precios del cómputo para que el PDF del cliente ya incluya la rentabilidad profesional.</p>
+                    </div>
                     <button onclick="app.applyIndices()" class="w-full py-4 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition-all uppercase text-sm flex justify-center items-center gap-3">
-                        <i class="fa-solid fa-bolt text-amber-400"></i> Aplicar a Toda la Lista
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Aplicar índices y rentabilidad
                     </button>
                 </div>
             </div>
@@ -848,6 +853,7 @@
                     if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
                 }
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
+                if (viewId === 'indices') { const pi = document.getElementById('input-profit-index'); if(pi) pi.value = this.currentProject.profitPercent ?? 30; }
                 if (viewId === 'gastos') { this.renderExpenses(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
             },
@@ -948,13 +954,24 @@
             },
             updateDbPrice: async function(id, f, val) { if(!this.user) return; const item = this.database.find(x => x.id === id); if(item) item[f] = parseFloat(val)||0; if(document.getElementById('project-items-table')) this.renderProjectTable(); try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); this.showToast('Costo actualizado.'); } catch(e){ this.showToast('No se pudo guardar el costo.'); } },
             applyIndices: async function() {
-                if(!this.user) return; const matPerc = 1 + ((parseFloat(document.getElementById('input-inf-mat').value)||0)/100); const moPerc = 1 + ((parseFloat(document.getElementById('input-inf-mo').value)||0)/100);
-                if(matPerc===1 && moPerc===1) return;
+                if(!this.user) return;
+                const matPerc = 1 + ((parseFloat(document.getElementById('input-inf-mat').value)||0)/100);
+                const moPerc = 1 + ((parseFloat(document.getElementById('input-inf-mo').value)||0)/100);
+                const profitInput = document.getElementById('input-profit-index');
+                if(profitInput) this.currentProject.profitPercent = parseFloat(profitInput.value) || 0;
                 try {
-                    const batch = writeBatch(db); const r = collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices');
-                    this.database.forEach(i => batch.set(doc(r, i.id), { matPrice: Math.round(i.matPrice * matPerc), laborPrice: Math.round(i.laborPrice * moPerc) }, { merge: true }));
-                    await batch.commit(); document.getElementById('input-inf-mat').value=''; document.getElementById('input-inf-mo').value=''; this.showToast('Índices aplicados.');
-                } catch(e){}
+                    if(matPerc !== 1 || moPerc !== 1) {
+                        const batch = writeBatch(db); const r = collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices');
+                        this.database.forEach(i => batch.set(doc(r, i.id), { matPrice: Math.round(i.matPrice * matPerc), laborPrice: Math.round(i.laborPrice * moPerc) }, { merge: true }));
+                        await batch.commit();
+                        document.getElementById('input-inf-mat').value='';
+                        document.getElementById('input-inf-mo').value='';
+                    }
+                    this.autoSaveDraft();
+                    this.renderProjectTable();
+                    this.renderProfitSummary();
+                    this.showToast('Índices y rentabilidad actualizados.');
+                } catch(e){ this.showToast('No se pudieron aplicar los índices.'); }
             },
 
             // --- WORKSPACE (Draft Auto-save) ---
@@ -1158,13 +1175,16 @@
             renderProjectTable: function() {
                 const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
                 const m = this.viewMode; const hm = m==='MANO DE OBRA'||m==='PLANILLA'; const hmo = m==='MATERIALES'||m==='PLANILLA'; const ht = m==='PLANILLA';
+                const multiplier = this.getBudgetSaleMultiplier ? this.getBudgetSaleMultiplier() : 1;
+                const profitPct = Number(this.currentProject.profitPercent) || 0;
+                const hasAdjustments = multiplier > 1.0001;
                 th.innerHTML = `
                     <tr>
                         <th rowspan="2" class="p-2.5 text-center bg-[#f8fafc]">ÍTEM / DESCRIPCIÓN</th>
                         <th rowspan="2" class="p-2.5 text-center w-16 bg-[#f8fafc]">UND</th>
                         <th rowspan="2" class="p-2.5 text-center w-24 bg-[#f8fafc]">CANT.</th>
-                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mat ${hm?'hidden':''}">COSTO MATERIALES</th>
-                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mo ${hmo?'hidden':''}">COSTO M. OBRA</th>
+                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mat ${hm?'hidden':''}">PRECIO MATERIALES</th>
+                        <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mo ${hmo?'hidden':''}">PRECIO M. OBRA</th>
                         <th rowspan="2" class="p-2.5 text-center w-28 bg-[#f8fafc] col-subtot ${ht?'hidden':''}">SUBTOTAL</th>
                         <th rowspan="2" class="p-2.5 text-center w-12 bg-[#f8fafc] print-hide"></th>
                     </tr>
@@ -1183,15 +1203,17 @@
                 Object.keys(g).sort().forEach(c => {
                     tb.innerHTML += `<tr><td colspan="10" class="p-3 font-extrabold text-emerald-900 text-[11px] bg-emerald-100/50 uppercase tracking-wider">${c}</td></tr>`;
                     g[c].forEach(i => {
-                        const sm = i.matPrice * i.qty; const so = i.laborPrice * i.qty; const st = sm + so; tm += sm; to += so;
+                        const saleMatUnit = (Number(i.matPrice)||0) * multiplier;
+                        const saleLaborUnit = (Number(i.laborPrice)||0) * multiplier;
+                        const sm = saleMatUnit * (Number(i.qty)||0); const so = saleLaborUnit * (Number(i.qty)||0); const st = sm + so; tm += sm; to += so;
                         tb.innerHTML += `
                             <tr class="hover:bg-slate-50 transition-colors group">
                                 <td class="p-2.5 text-slate-700 font-medium">${i.name}</td>
                                 <td class="p-2.5 text-center text-slate-400 font-bold text-[10px]">${i.unit}</td>
                                 <td class="p-1.5 text-center"><input type="number" step="0.1" class="w-full text-center outline-none bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded py-1 font-bold text-slate-800 transition-all border border-transparent focus:border-emerald-300" value="${i.qty}" onchange="app.updateItemQty('${i.uid}', this.value)"></td>
-                                <td class="p-2.5 text-right text-slate-500 col-mat ${hm?'hidden':''}">${this.formatCurrency(i.matPrice)}</td>
+                                <td class="p-2.5 text-right text-slate-500 col-mat ${hm?'hidden':''}">${this.formatCurrency(saleMatUnit)}</td>
                                 <td class="p-2.5 text-right font-semibold text-slate-700 col-mat ${hm?'hidden':''}">${this.formatCurrency(sm)}</td>
-                                <td class="p-2.5 text-right text-slate-500 col-mo ${hmo?'hidden':''}">${this.formatCurrency(i.laborPrice)}</td>
+                                <td class="p-2.5 text-right text-slate-500 col-mo ${hmo?'hidden':''}">${this.formatCurrency(saleLaborUnit)}</td>
                                 <td class="p-2.5 text-right font-semibold text-slate-700 col-mo ${hmo?'hidden':''}">${this.formatCurrency(so)}</td>
                                 <td class="p-2.5 text-right font-black text-emerald-800 bg-emerald-50/30 col-subtot ${ht?'hidden':''}">${this.formatCurrency(st)}</td>
                                 <td class="p-2 text-center print-hide w-10"><button onclick="app.removeItemFromProject('${i.uid}')" class="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash-can"></i></button></td>
@@ -1199,6 +1221,9 @@
                         `;
                     });
                 });
+                if(hasAdjustments && this.currentProject.items.length > 0) {
+                    tb.innerHTML += `<tr class="print-hide"><td colspan="10" class="p-3 text-[11px] text-emerald-800 bg-emerald-50 border-t border-emerald-100 font-bold"><i class="fa-solid fa-shield-halved mr-1"></i> Vista cliente: los precios ya incluyen gastos cargados y rentabilidad interna (${profitPct}%). No aparece como ítem separado en el PDF.</td></tr>`;
+                }
                 if(document.getElementById('summary-mat')) { document.getElementById('summary-mat').textContent = this.formatCurrency(tm); document.getElementById('summary-mo').textContent = this.formatCurrency(to); document.getElementById('summary-total').textContent = this.formatCurrency(tm + to); }
             },
 
@@ -1331,11 +1356,17 @@
                 this.currentProject.expenses.push({ id:'exp_'+Math.random(), category:'Combustible', detail:`${Math.round(r.totalKm)} km / ${r.liters.toFixed(1)} L / ${this.formatCurrency(r.price)} por litro`, qty:1, unitCost:Math.round(r.total) });
                 this.autoSaveDraft();
                 this.renderExpenses();
+                this.renderProjectTable();
                 this.showToast('Combustible agregado a Mis Gastos.');
             },
             getExpensesTotal: function() { return (this.currentProject.expenses || []).reduce((a,e)=> a + ((Number(e.qty)||0) * (Number(e.unitCost)||0)), 0); },
             getProfitAmount: function() { const b = this.getProjectBaseTotals(); return (b.direct + this.getExpensesTotal()) * ((Number(this.currentProject.profitPercent)||0)/100); },
             getFinalPrice: function() { const b = this.getProjectBaseTotals(); return b.direct + this.getExpensesTotal() + this.getProfitAmount(); },
+            getBudgetSaleMultiplier: function() {
+                const b = this.getProjectBaseTotals();
+                if(!b.direct) return 1;
+                return this.getFinalPrice() / b.direct;
+            },
             renderExpenses: function() {
                 this.ensureDefaultExpenses();
                 const tb = document.getElementById('expenses-table'); if(!tb) return;
@@ -1354,10 +1385,10 @@
                 box.innerHTML = `<div class="flex justify-between"><span>Materiales</span><b>${this.formatCurrency(b.mat)}</b></div><div class="flex justify-between"><span>Mano de obra / jornales</span><b>${this.formatCurrency(b.mo)}</b></div><div class="flex justify-between"><span>Gastos adicionales</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between border-t border-slate-200 pt-2"><span>Costo total</span><b>${this.formatCurrency(b.direct + exp)}</b></div><div class="flex justify-between text-emerald-700"><span>Rentabilidad</span><b>${this.formatCurrency(prof)}</b></div>`;
                 const fp = document.getElementById('final-price-box'); if(fp) fp.textContent = this.formatCurrency(final);
             },
-            addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); },
-            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); },
-            removeExpense: function(id) { this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); },
-            updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderProfitSummary(); },
+            addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
+            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
+            removeExpense: function(id) { this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
+            updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderProfitSummary(); this.renderProjectTable(); },
 
             // --- IMPRESION ---
             openPrintModal: function() { document.getElementById('print-modal').className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"; },
