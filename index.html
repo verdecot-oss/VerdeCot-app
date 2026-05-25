@@ -91,6 +91,26 @@
                 margin-bottom: 10mm !important; /* Separación extra del borde inferior */
             }
             #budget-summary-block * { color: #0f172a !important; border-color: #94a3b8 !important; }
+            #budget-summary-block { 
+                width: 42% !important; 
+                margin-left: auto !important; 
+                margin-top: 8px !important;
+                margin-bottom: 0 !important;
+                padding: 8px 12px !important; 
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                display: block !important;
+                text-align: right !important;
+            }
+            #budget-summary-block > div { width: 100% !important; max-width: 100% !important; margin-left: auto !important; justify-content: flex-end !important; font-size: 10px !important; line-height: 1.25 !important; }
+            #budget-summary-block > div:nth-child(3) { font-size: 13px !important; margin-top: 5px !important; padding-top: 5px !important; }
+            #budget-summary-block .text-2xl, #budget-summary-block .md\:text-3xl { font-size: 13px !important; }
+            #budget-summary-block .w-32, #budget-summary-block .w-40 { width: 105px !important; }
+            body.print-mode-materiales #budget-summary-block > div:nth-child(2),
+            body.print-mode-materiales #budget-summary-block > div:nth-child(3) { display: none !important; }
+            body.print-mode-mano #budget-summary-block > div:nth-child(1),
+            body.print-mode-mano #budget-summary-block > div:nth-child(3) { display: none !important; }
+            body.print-mode-planilla #budget-summary-block { display: none !important; }
         }
     </style>
 </head>
@@ -338,10 +358,11 @@
                 </div>
                 
                 <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
-                    <button onclick="app.navigate('computo')" id="nav-computo" class="hover:text-emerald-700 transition-colors">Cómputo</button>
-                    <button onclick="app.navigate('database')" id="nav-database" class="hover:text-emerald-700 transition-colors">Mis Costos</button>
-                    <button onclick="app.navigate('gastos')" id="nav-gastos" class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
-                    <button onclick="app.navigate('indices')" id="nav-indices" class="hover:text-emerald-700 transition-colors">Índices</button>
+                    <button onclick="app.navigate('computo')" id="nav-computo" title="Armá el presupuesto activo con rubros e ítems del catálogo." class="hover:text-emerald-700 transition-colors">Cómputo</button>
+                    <button onclick="app.navigate('database')" id="nav-database" title="Editá tus costos maestros de materiales y mano de obra." class="hover:text-emerald-700 transition-colors">Mis Costos</button>
+                    <button onclick="app.navigate('calculadoras')" id="nav-calculadoras" title="Calculá costos reales de obra como combustible y jornales." class="hover:text-emerald-700 transition-colors">Calculadoras</button>
+                    <button onclick="app.navigate('gastos')" id="nav-gastos" title="Cargá gastos adicionales recuperables de la obra." class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
+                    <button onclick="app.navigate('indices')" id="nav-indices" title="Consultá variaciones mensuales y aplicá ajustes a tus costos." class="hover:text-emerald-700 transition-colors">Índices</button>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
@@ -384,6 +405,8 @@
     <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm">
         <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
         <button onclick="app.navigate('database')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Costos</button>
+        <button onclick="app.navigate('calculadoras')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-sliders mb-1 text-sm block"></i> Calculadoras</button>
+        <button onclick="app.navigate('gastos')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-receipt mb-1 text-sm block"></i> Gastos</button>
     </div>
 
     <main id="main-content" class="flex-1 w-full flex flex-col md:flex-row overflow-hidden bg-[#f4f7f6]">
@@ -528,21 +551,23 @@
 
     <!-- LAS VISTAS DE DATABASE, INDICES Y PERFIL SE MANTIENEN IGUAL -->
 
-    <template id="view-gastos">
+
+    <template id="view-calculadoras">
         <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
             <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
-                <div><h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Mis Gastos y Rentabilidad</h2><p class="text-sm text-slate-500 mt-1">Calculadora vinculada al cómputo activo.</p></div>
-                <button onclick="app.printSpecific('rentabilidad')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm"><i class="fa-solid fa-print"></i> PDF Rentabilidad</button>
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Calculadoras</h2>
+                    <p class="text-sm text-slate-500 mt-1">Herramientas rápidas para calcular costos reales de obra sin mezclar conceptos.</p>
+                </div>
             </div>
-            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-6">
+            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 space-y-6">
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-200 bg-emerald-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                             <div>
                                 <h3 class="font-black text-emerald-900 text-sm flex items-center gap-2"><i class="fa-solid fa-gas-pump text-emerald-600"></i> Calculadora de combustible</h3>
                                 <p class="text-xs text-emerald-700 mt-1">Consumo sugerido: 10 km por litro. El precio del litro es manual para esta beta.</p>
                             </div>
-                            <button onclick="app.addFuelToExpenses()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm"><i class="fa-solid fa-plus"></i> Agregar a gastos</button>
+                            <button onclick="app.addFuelToExpenses()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm" title="Actualiza la línea fija de combustible en Mis Gastos"><i class="fa-solid fa-arrows-rotate"></i> Actualizar en gastos</button>
                         </div>
                         <div class="p-4 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                             <div>
@@ -569,31 +594,73 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-700 text-sm">Gastos adicionales de obra</h3>
-                        <div class="flex gap-2"><button onclick="app.addExpenseRow()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i> Agregar gasto</button><button onclick="app.printSpecific('gastos')" class="bg-white border border-slate-300 px-3 py-2 rounded-lg text-xs font-bold">PDF Gastos</button></div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-blue-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                            <h3 class="font-black text-blue-900 text-sm flex items-center gap-2"><i class="fa-solid fa-users-gear text-blue-600"></i> Jornales reales</h3>
+                            <p class="text-xs text-blue-700 mt-1">Cargá la cuadrilla real solo como referencia interna. No modifica automáticamente el cómputo ni la rentabilidad.</p>
+                        </div>
+                        <button onclick="app.addWageRow()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm"><i class="fa-solid fa-plus"></i> Agregar trabajador/a</button>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-left min-w-[760px]">
-                            <thead class="bg-slate-100 text-slate-500 font-bold"><tr><th class="p-3">Rubro</th><th class="p-3">Detalle</th><th class="p-3 text-center">Cant.</th><th class="p-3 text-right">Costo unit.</th><th class="p-3 text-right">Total</th><th class="p-3 text-center w-10"></th></tr></thead>
-                            <tbody id="expenses-table" class="divide-y divide-slate-100"></tbody>
+                        <table class="w-full text-xs text-left min-w-[860px]">
+                            <thead class="bg-slate-100 text-slate-500 font-bold">
+                                <tr>
+                                    <th class="p-3">Nombre</th>
+                                    <th class="p-3">Especialidad</th>
+                                    <th class="p-3 text-center">Días</th>
+                                    <th class="p-3 text-right">Jornal</th>
+                                    <th class="p-3 text-right">Subtotal</th>
+                                    <th class="p-3 text-center w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="wages-table" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
-                    <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Rubros sugeridos: combustible, peajes, insumos menores, fletes, alquiler/compra de herramientas, viáticos, estacionamiento, disposición de residuos, protección personal, mantenimiento de máquinas, imprevistos y administración.</div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">M.O. del cómputo</div><div id="wages-estimated-mo" class="font-black text-slate-800 mt-1">$0</div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">Jornales reales</div><div id="wages-real-total" class="font-black text-blue-800 mt-1">$0</div></div>
+                        <div id="wages-advice" class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs font-bold text-emerald-800 flex items-center">Sin jornales reales cargados.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    <template id="view-gastos">
+        <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
+            <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Mis Gastos</h2>
+                    <p class="text-sm text-slate-500 mt-1">Gastos recuperables del presupuesto activo. La rentabilidad se maneja editando costos e índices.</p>
+                </div>
+                <button onclick="app.printSpecific('gastos')" class="bg-white border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50"><i class="fa-solid fa-print"></i> PDF Gastos</button>
+            </div>
+            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700 text-sm">Gastos adicionales de obra</h3>
+                            <button onclick="app.addExpenseRow()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i> Agregar gasto</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left min-w-[760px]">
+                                <thead class="bg-slate-100 text-slate-500 font-bold"><tr><th class="p-3">Rubro</th><th class="p-3">Detalle</th><th class="p-3 text-center">Cant.</th><th class="p-3 text-right">Costo unit.</th><th class="p-3 text-right">Total</th><th class="p-3 text-center w-10"></th></tr></thead>
+                                <tbody id="expenses-table" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Rubros sugeridos: combustible, peajes, insumos menores, fletes, alquiler/compra de herramientas, viáticos, estacionamiento, disposición de residuos, protección personal, mantenimiento de máquinas, imprevistos y administración.</div>
                     </div>
                 </div>
                 <div class="space-y-6">
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-                        <h3 class="font-bold text-slate-800 mb-4">Calculadora de rentabilidad</h3>
-                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Rentabilidad deseada (%)</label>
-                        <input id="profit-percent" type="number" value="30" onchange="app.updateProfitPercent(this.value)" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-right font-bold outline-none focus:border-emerald-500 mb-4">
-                        <div id="profit-summary" class="space-y-2 text-sm"></div>
+                        <h3 class="font-bold text-slate-800 mb-4">Resumen simple</h3>
+                        <div id="expenses-summary" class="space-y-3 text-sm"></div>
                     </div>
                     <div class="bg-emerald-800 text-white rounded-2xl shadow-sm p-5">
-                        <h3 class="font-bold text-emerald-100 mb-3">Precio sugerido</h3>
-                        <div id="final-price-box" class="text-4xl font-black">$0</div>
-                        <p class="text-xs text-emerald-100 mt-2">Costo directo + gastos + rentabilidad.</p>
+                        <h3 class="font-bold text-emerald-100 mb-3">Resultado estimado</h3>
+                        <div id="expenses-net-box" class="text-3xl font-black">$0</div>
+                        <p class="text-xs text-emerald-100 mt-2">Presupuesto activo menos gastos cargados. No incluye jornales reales informativos.</p>
                     </div>
                 </div>
             </div>
@@ -622,31 +689,39 @@
     </template>
 
     <template id="view-indices">
-        <div class="p-4 md:p-8 w-full max-w-2xl mx-auto h-full overflow-y-auto fade-in flex items-center justify-center">
+        <div class="p-4 md:p-8 w-full max-w-3xl mx-auto h-full overflow-y-auto fade-in flex items-center justify-center">
             <div class="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden w-full">
                 <div class="bg-gradient-to-r from-emerald-600 to-emerald-800 p-8 text-white text-center relative overflow-hidden">
                     <i class="fa-solid fa-chart-line text-6xl mb-4 opacity-20 absolute -right-4 -bottom-4 transform rotate-12"></i>
                     <i class="fa-solid fa-bolt text-4xl mb-3 text-emerald-200 relative z-10"></i>
-                    <h2 class="text-2xl font-bold relative z-10">Ajuste por Inflación (CAC)</h2>
-                    <p class="text-sm text-emerald-100 mt-2 font-medium relative z-10 max-w-sm mx-auto">Aplica un incremento porcentual masivo a tu lista privada de precios.</p>
+                    <h2 class="text-2xl font-bold relative z-10">Índices y variación mensual</h2>
+                    <p class="text-sm text-emerald-100 mt-2 font-medium relative z-10 max-w-md mx-auto">Referencia informativa para saber cómo se movieron materiales y mano de obra. También podés aplicar ajustes a tu lista de costos.</p>
                 </div>
                 <div class="p-8 space-y-6">
-                    <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento de Materiales (%)</label>
-                        <input type="number" id="input-inf-mat" placeholder="Ej: 5.4" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+                    <div class="bg-slate-900 text-white rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Actualización informativa</div>
+                            <input type="text" id="index-label" value="Mayo 2026" class="bg-transparent text-xl font-black outline-none border-b border-white/20 focus:border-emerald-300 mt-1 w-full md:w-48">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-center">
+                            <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-300">Materiales</div><input type="number" id="index-monthly-mat" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none"> <span class="font-black">%</span></div>
+                            <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-300">Mano de obra</div><input type="number" id="index-monthly-mo" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none"> <span class="font-black">%</span></div>
+                        </div>
                     </div>
-                    <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
-                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento de Mano de Obra (%)</label>
-                        <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
-                    </div>
-                    <div class="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl">
-                        <label class="block text-xs font-bold text-emerald-700 mb-2 uppercase tracking-wider">Rentabilidad incluida en el presupuesto (%)</label>
-                        <input type="number" id="input-profit-index" value="30" placeholder="Ej: 30" class="w-full text-2xl p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-emerald-900 transition-all bg-white text-center">
-                        <p class="text-xs text-emerald-800/70 mt-3 font-semibold leading-relaxed">Este porcentaje no aparece como ítem: se distribuye dentro de los precios del cómputo para que el PDF del cliente ya incluya la rentabilidad profesional.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
+                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aplicar aumento a Materiales (%)</label>
+                            <input type="number" id="input-inf-mat" placeholder="Ej: 5.4" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
+                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aplicar aumento a Mano de Obra (%)</label>
+                            <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+                        </div>
                     </div>
                     <button onclick="app.applyIndices()" class="w-full py-4 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition-all uppercase text-sm flex justify-center items-center gap-3">
-                        <i class="fa-solid fa-bolt text-amber-400"></i> Aplicar índices y rentabilidad
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Guardar referencia y aplicar ajustes
                     </button>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center">La información mensual es orientativa. Los aumentos solo modifican tus costos si completás los campos de aplicación.</p>
                 </div>
             </div>
         </div>
@@ -734,7 +809,7 @@
 
         window.app = {
             user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar' },
-            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 } }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
+            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
 
             checkSubscriptionStatus: function(u) { return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' }; }, // Forzamos Pro para esta etapa
 
@@ -759,7 +834,7 @@
                 const roleDisplay = document.getElementById('user-role-display');
                 if(roleDisplay) roleDisplay.textContent = roleTxt;
                 const badge = document.getElementById('user-badge');
-                if(badge) badge.innerHTML = badgeHtml;
+                if(badge) badge.innerHTML = badgeHtml + '<span class="hidden lg:inline text-slate-400 mx-1">|</span><span class="hidden lg:inline text-emerald-700">' + this.getMonthlyIndexLabel() + '</span>';
             },
 
             init: function() {
@@ -785,6 +860,7 @@
             toggleUserMenu: function(e) { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('hidden'); },
             enterPortal: function() { document.getElementById('auth-modal').className="hidden"; this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('computo'); },
             formatCurrency: (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0),
+            getMonthlyIndexLabel: function() { const mi=this.currentProject?.monthlyIndex || {mat:0, mo:0}; const mat=Number(mi.mat)||0, mo=Number(mi.mo)||0; return `MAT ${mat>=0?'+':''}${mat}% · M.O. ${mo>=0?'+':''}${mo}%`; },
             showToast: function(msg) { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = "bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-3 fade-in z-50"; t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3500); },
             bindAuthEvents: function() {
                 const btnLogin = document.getElementById('btn-login');
@@ -842,7 +918,7 @@
             navigate: function(viewId) {
                 const content = document.getElementById('main-content'); const template = document.getElementById(`view-${viewId}`); if (!template) return;
                 content.innerHTML = template.innerHTML;
-                ['computo','database','gastos','indices'].forEach(id => {
+                ['computo','database','calculadoras','gastos','indices'].forEach(id => {
                     const btn = document.getElementById(`nav-${id}`);
                     if(btn) btn.className = id === viewId ? "text-emerald-800 font-black transition-colors border-b-[3px] border-emerald-600 pb-1" : "text-emerald-900/60 hover:text-emerald-700 font-bold transition-colors pb-1";
                 });
@@ -859,7 +935,8 @@
                     if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
                 }
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
-                if (viewId === 'indices') { const pi = document.getElementById('input-profit-index'); if(pi) pi.value = this.currentProject.profitPercent ?? 30; }
+                if (viewId === 'indices') { const mi=this.currentProject.monthlyIndex||{label:'Mayo 2026',mat:0,mo:0}; const l=document.getElementById('index-label'); if(l) l.value=mi.label||'Mayo 2026'; const im=document.getElementById('index-monthly-mat'); if(im) im.value=mi.mat||0; const io=document.getElementById('index-monthly-mo'); if(io) io.value=mi.mo||0; }
+                if (viewId === 'calculadoras') { this.renderCalculators(); }
                 if (viewId === 'gastos') { this.renderExpenses(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
             },
@@ -961,10 +1038,15 @@
             updateDbPrice: async function(id, f, val) { if(!this.user) return; const item = this.database.find(x => x.id === id); if(item) item[f] = parseFloat(val)||0; if(document.getElementById('project-items-table')) this.renderProjectTable(); try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); this.showToast('Costo actualizado.'); } catch(e){ this.showToast('No se pudo guardar el costo.'); } },
             applyIndices: async function() {
                 if(!this.user) return;
-                const matPerc = 1 + ((parseFloat(document.getElementById('input-inf-mat').value)||0)/100);
-                const moPerc = 1 + ((parseFloat(document.getElementById('input-inf-mo').value)||0)/100);
-                const profitInput = document.getElementById('input-profit-index');
-                if(profitInput) this.currentProject.profitPercent = parseFloat(profitInput.value) || 0;
+                const matPercVal = parseFloat(document.getElementById('input-inf-mat')?.value) || 0;
+                const moPercVal = parseFloat(document.getElementById('input-inf-mo')?.value) || 0;
+                const matPerc = 1 + (matPercVal/100);
+                const moPerc = 1 + (moPercVal/100);
+                this.currentProject.monthlyIndex = {
+                    label: document.getElementById('index-label')?.value || 'Actualización mensual',
+                    mat: parseFloat(document.getElementById('index-monthly-mat')?.value) || 0,
+                    mo: parseFloat(document.getElementById('index-monthly-mo')?.value) || 0
+                };
                 try {
                     if(matPerc !== 1 || moPerc !== 1) {
                         const batch = writeBatch(db); const r = collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices');
@@ -974,9 +1056,9 @@
                         document.getElementById('input-inf-mo').value='';
                     }
                     this.autoSaveDraft();
+                    this.handleUserAuthChange(this.user);
                     this.renderProjectTable();
-                    this.renderProfitSummary();
-                    this.showToast('Índices y rentabilidad actualizados.');
+                    this.showToast('Índices actualizados.');
                 } catch(e){ this.showToast('No se pudieron aplicar los índices.'); }
             },
 
@@ -991,13 +1073,16 @@
                         this.currentProject.expenses = data.expenses || this.currentProject.expenses || [];
                         this.currentProject.profitPercent = data.profitPercent ?? this.currentProject.profitPercent ?? 30;
                         this.currentProject.fuelCalc = data.fuelCalc || this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 };
+                        this.currentProject.wages = data.wages || this.currentProject.wages || [];
+                        this.currentProject.monthlyIndex = data.monthlyIndex || this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 };
                         if(document.getElementById('project-items-table')) this.renderProjectTable(); 
                     } 
                 }); 
             },
             autoSaveDraft: async function() {
                 if(!this.user) return;
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title, expenses: this.currentProject.expenses || [], profitPercent: this.currentProject.profitPercent || 0, fuelCalc: this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 } }); } catch(e){}
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title, expenses: this.currentProject.expenses || [], profitPercent: this.currentProject.profitPercent || 0, fuelCalc: this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: this.currentProject.wages || [],
+                    monthlyIndex: this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 }, monthlyIndex: this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 } }); } catch(e){}
             },
             clearProject: function() {
                 if(confirm('¿Estás seguro de limpiar la hoja de presupuesto? Empezarás desde cero.')) {
@@ -1007,6 +1092,7 @@
                     this.currentProject.expenses = [];
                     this.currentProject.profitPercent = 30;
                     this.currentProject.fuelCalc = { km: 0, trips: 1, efficiency: 10, price: 2239 };
+                    this.currentProject.wages = [];
                     this.autoSaveDraft();
                     this.renderProjectTable();
                     this.renderCatalog(document.getElementById('item-search')?.value || '');
@@ -1022,6 +1108,7 @@
                 this.currentProject.expenses = [];
                 this.currentProject.profitPercent = 30;
                 this.currentProject.fuelCalc = { km: 0, trips: 1, efficiency: 10, price: 2239 };
+                this.currentProject.wages = [];
                 this.autoSaveDraft();
                 this.navigate('computo');
             },
@@ -1126,6 +1213,8 @@
                 this.currentProject.expenses = b.expenses || [];
                 this.currentProject.profitPercent = b.profitPercent ?? 30;
                 this.currentProject.fuelCalc = b.fuelCalc || this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 };
+                this.currentProject.wages = b.wages || [];
+                this.currentProject.monthlyIndex = b.monthlyIndex || this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 };
                 this.autoSaveDraft();
                 
                 // Pre-fill modal data in case they want to resave
@@ -1181,17 +1270,15 @@
             renderProjectTable: function() {
                 const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
                 const m = this.viewMode; const hm = m==='MANO DE OBRA'||m==='PLANILLA'; const hmo = m==='MATERIALES'||m==='PLANILLA'; const ht = m==='PLANILLA';
-                const multiplier = this.getBudgetSaleMultiplier ? this.getBudgetSaleMultiplier() : 1;
-                const profitPct = Number(this.currentProject.profitPercent) || 0;
-                const hasAdjustments = multiplier > 1.0001;
+                const multiplier = 1;
                 th.innerHTML = `
                     <tr>
                         <th rowspan="2" class="p-2.5 text-center bg-[#f8fafc]">ÍTEM / DESCRIPCIÓN</th>
-                        <th rowspan="2" class="p-2.5 text-center w-16 bg-[#f8fafc]">UND</th>
+                        <th rowspan="2" class="p-2.5 text-center w-16 bg-[#f8fafc] col-unit">UND</th>
                         <th rowspan="2" class="p-2.5 text-center w-24 bg-[#f8fafc]">CANT.</th>
                         <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mat ${hm?'hidden':''}">PRECIO MATERIALES</th>
                         <th colspan="2" class="p-1.5 text-center bg-slate-100 text-[10px] col-mo ${hmo?'hidden':''}">PRECIO M. OBRA</th>
-                        <th rowspan="2" class="p-2.5 text-center w-28 bg-[#f8fafc] col-subtot ${ht?'hidden':''}">SUBTOTAL</th>
+                        <th rowspan="2" class="p-2.5 text-center w-28 bg-[#f8fafc] col-subtot ${ht?'hidden':''}">${m==='MATERIALES'?'SUBTOTAL MAT.':(m==='MANO DE OBRA'?'SUBTOTAL M.O.':'SUBTOTAL')}</th>
                         <th rowspan="2" class="p-2.5 text-center w-12 bg-[#f8fafc] print-hide"></th>
                     </tr>
                     <tr>
@@ -1212,24 +1299,22 @@
                         const saleMatUnit = (Number(i.matPrice)||0) * multiplier;
                         const saleLaborUnit = (Number(i.laborPrice)||0) * multiplier;
                         const sm = saleMatUnit * (Number(i.qty)||0); const so = saleLaborUnit * (Number(i.qty)||0); const st = sm + so; tm += sm; to += so;
+                        const visibleSubtotal = m === 'MATERIALES' ? sm : (m === 'MANO DE OBRA' ? so : st);
                         tb.innerHTML += `
                             <tr class="hover:bg-slate-50 transition-colors group">
                                 <td class="p-2.5 text-slate-700 font-medium">${i.name}</td>
-                                <td class="p-2.5 text-center text-slate-400 font-bold text-[10px]">${i.unit}</td>
+                                <td class="p-2.5 text-center text-slate-400 font-bold text-[10px] col-unit">${i.unit}</td>
                                 <td class="p-1.5 text-center"><input type="number" step="0.1" class="w-full text-center outline-none bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-100 rounded py-1 font-bold text-slate-800 transition-all border border-transparent focus:border-emerald-300" value="${i.qty}" onchange="app.updateItemQty('${i.uid}', this.value)"></td>
                                 <td class="p-2.5 text-right text-slate-500 col-mat ${hm?'hidden':''}">${this.formatCurrency(saleMatUnit)}</td>
                                 <td class="p-2.5 text-right font-semibold text-slate-700 col-mat ${hm?'hidden':''}">${this.formatCurrency(sm)}</td>
                                 <td class="p-2.5 text-right text-slate-500 col-mo ${hmo?'hidden':''}">${this.formatCurrency(saleLaborUnit)}</td>
                                 <td class="p-2.5 text-right font-semibold text-slate-700 col-mo ${hmo?'hidden':''}">${this.formatCurrency(so)}</td>
-                                <td class="p-2.5 text-right font-black text-emerald-800 bg-emerald-50/30 col-subtot ${ht?'hidden':''}">${this.formatCurrency(st)}</td>
+                                <td class="p-2.5 text-right font-black text-emerald-800 bg-emerald-50/30 col-subtot ${ht?'hidden':''}">${this.formatCurrency(visibleSubtotal)}</td>
                                 <td class="p-2 text-center print-hide w-10"><button onclick="app.removeItemFromProject('${i.uid}')" class="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash-can"></i></button></td>
                             </tr>
                         `;
                     });
                 });
-                if(hasAdjustments && this.currentProject.items.length > 0) {
-                    tb.innerHTML += `<tr class="print-hide"><td colspan="10" class="p-3 text-[11px] text-emerald-800 bg-emerald-50 border-t border-emerald-100 font-bold"><i class="fa-solid fa-shield-halved mr-1"></i> Vista cliente: los precios ya incluyen gastos cargados y rentabilidad interna (${profitPct}%). No aparece como ítem separado en el PDF.</td></tr>`;
-                }
                 if(document.getElementById('summary-mat')) { document.getElementById('summary-mat').textContent = this.formatCurrency(tm); document.getElementById('summary-mo').textContent = this.formatCurrency(to); document.getElementById('summary-total').textContent = this.formatCurrency(tm + to); }
             },
 
@@ -1304,18 +1389,19 @@
 
             // --- GASTOS Y RENTABILIDAD ---
             getProjectBaseTotals: function() {
-                let mat = 0, mo = 0;
+                let mat = 0, estimatedMo = 0;
                 (this.currentProject.items || []).forEach(i => {
                     const dbI = this.database.find(x => x.id === i.dbId) || i;
                     mat += (Number(dbI.matPrice) || 0) * (Number(i.qty) || 0);
-                    mo += (Number(dbI.laborPrice) || 0) * (Number(i.qty) || 0);
+                    estimatedMo += (Number(dbI.laborPrice) || 0) * (Number(i.qty) || 0);
                 });
-                return { mat, mo, direct: mat + mo };
+                const realWages = this.getWagesTotal ? this.getWagesTotal() : 0;
+                const mo = estimatedMo;
+                return { mat, estimatedMo, realWages, mo, direct: mat + mo };
             },
             ensureDefaultExpenses: function() {
                 if(!this.currentProject.expenses || this.currentProject.expenses.length === 0) {
                     this.currentProject.expenses = [
-                        { id:'exp_'+Math.random(), category:'Combustible', detail:'Traslados de cuadrilla / camioneta', qty:1, unitCost:0 },
                         { id:'exp_'+Math.random(), category:'Peajes', detail:'Autopistas / accesos', qty:1, unitCost:0 },
                         { id:'exp_'+Math.random(), category:'Insumos', detail:'Bolsas, cinta, guantes, discos, tornillos, etc.', qty:1, unitCost:0 },
                         { id:'exp_'+Math.random(), category:'Fletes', detail:'Entrega/retiro de materiales', qty:1, unitCost:0 },
@@ -1352,89 +1438,199 @@
                     price: parseFloat(document.getElementById('fuel-price')?.value) || 0
                 };
                 this.hydrateFuelInputs();
+                // Actualiza automáticamente la línea fija de combustible en Mis Gastos.
+                this.ensureDefaultExpenses();
+                this.syncFuelExpense(true);
                 this.autoSaveDraft();
+            },
+            syncFuelExpense: function(createIfMissing = true) {
+                const r = this.getFuelResult();
+                if(!this.currentProject.expenses) this.currentProject.expenses = [];
+
+                // Busca primero la línea automática nueva. Si el usuario venía de una versión anterior
+                // donde existía una fila editable llamada “Combustible”, la convierte en fija.
+                let fuel = this.currentProject.expenses.find(e => e.fuelAuto === true || e.id === 'fuel_auto');
+                if(!fuel) {
+                    fuel = this.currentProject.expenses.find(e => String(e.category || '').trim().toLowerCase().startsWith('combustible'));
+                }
+
+                if(r.total <= 0) {
+                    if(fuel) {
+                        fuel.id = 'fuel_auto';
+                        fuel.category = 'Combustible calculado';
+                        fuel.detail = 'Sin cálculo de combustible cargado';
+                        fuel.qty = 1;
+                        fuel.unitCost = 0;
+                        fuel.locked = true;
+                        fuel.fuelAuto = true;
+                    }
+                    return fuel || null;
+                }
+
+                if(!fuel && !createIfMissing) return null;
+                if(!fuel) {
+                    fuel = { id:'fuel_auto', category:'Combustible calculado', detail:'', qty:1, unitCost:0, locked:true, fuelAuto:true };
+                    this.currentProject.expenses.unshift(fuel);
+                }
+
+                fuel.id = 'fuel_auto';
+                fuel.category = 'Combustible calculado';
+                fuel.detail = `${Math.round(r.totalKm)} km / ${r.liters.toFixed(1)} L / ${this.formatCurrency(r.price)} por litro`;
+                fuel.qty = 1;
+                fuel.unitCost = Math.round(r.total);
+                fuel.locked = true;
+                fuel.fuelAuto = true;
+
+                // Evita duplicados viejos de combustible si quedaron guardados de una versión anterior.
+                let found = false;
+                this.currentProject.expenses = this.currentProject.expenses.filter(e => {
+                    const isFuel = e.id === 'fuel_auto' || e.fuelAuto === true || String(e.category || '').trim().toLowerCase().startsWith('combustible');
+                    if(!isFuel) return true;
+                    if(!found) { found = true; return true; }
+                    return false;
+                });
+                if(!this.currentProject.expenses.includes(fuel)) this.currentProject.expenses.unshift(fuel);
+                return fuel;
             },
             addFuelToExpenses: function() {
                 this.updateFuelCalc();
                 const r = this.getFuelResult();
                 if(r.total <= 0) { this.showToast('Cargá km, viajes y precio del litro para calcular combustible.'); return; }
                 this.ensureDefaultExpenses();
-                this.currentProject.expenses.push({ id:'exp_'+Math.random(), category:'Combustible', detail:`${Math.round(r.totalKm)} km / ${r.liters.toFixed(1)} L / ${this.formatCurrency(r.price)} por litro`, qty:1, unitCost:Math.round(r.total) });
+                this.syncFuelExpense(true);
                 this.autoSaveDraft();
                 this.renderExpenses();
+                this.renderCalculators();
                 this.renderProjectTable();
-                this.showToast('Combustible agregado a Mis Gastos.');
+                this.showToast('Combustible actualizado automáticamente en Mis Gastos.');
             },
-            getExpensesTotal: function() { return (this.currentProject.expenses || []).reduce((a,e)=> a + ((Number(e.qty)||0) * (Number(e.unitCost)||0)), 0); },
-            getProfitAmount: function() { const b = this.getProjectBaseTotals(); return (b.direct + this.getExpensesTotal()) * ((Number(this.currentProject.profitPercent)||0)/100); },
-            getFinalPrice: function() { const b = this.getProjectBaseTotals(); return b.direct + this.getExpensesTotal() + this.getProfitAmount(); },
-            getBudgetSaleMultiplier: function() {
+
+            ensureWages: function() {
+                if(!this.currentProject.wages) this.currentProject.wages = [];
+                return this.currentProject.wages;
+            },
+            getWagesTotal: function() {
+                return (this.currentProject.wages || []).reduce((a,w)=> a + ((Number(w.days)||0) * (Number(w.rate)||0)), 0);
+            },
+            renderCalculators: function() {
+                this.hydrateFuelInputs();
+                this.renderWages();
+            },
+            renderWages: function() {
+                this.ensureWages();
+                const tb = document.getElementById('wages-table');
+                if(!tb) return;
+                tb.innerHTML = '';
+                if(this.currentProject.wages.length === 0) {
+                    tb.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">Todavía no cargaste jornales reales. Podés usar esta calculadora para validar la mano de obra del cómputo.</td></tr>`;
+                }
+                this.currentProject.wages.forEach(w => {
+                    const subtotal = (Number(w.days)||0) * (Number(w.rate)||0);
+                    tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold" placeholder="Nombre" value="${w.name||''}" onchange="app.updateWage('${w.id}','name',this.value)"></td><td class="p-2"><select class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold bg-white" onchange="app.updateWage('${w.id}','specialty',this.value)">${['Oficial','1/2 oficial','Jardinero profesional','Ayudante','Maquinista','Capataz','Otro'].map(x=>`<option ${w.specialty===x?'selected':''}>${x}</option>`).join('')}</select></td><td class="p-2 text-center"><input type="number" class="w-20 text-center border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${w.days||0}" onchange="app.updateWage('${w.id}','days',this.value)"></td><td class="p-2 text-right"><input type="number" class="w-32 text-right border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${w.rate||0}" onchange="app.updateWage('${w.id}','rate',this.value)"></td><td class="p-3 text-right font-black text-blue-800">${this.formatCurrency(subtotal)}</td><td class="p-2 text-center"><button onclick="app.removeWage('${w.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
+                });
                 const b = this.getProjectBaseTotals();
-                if(!b.direct) return 1;
-                return this.getFinalPrice() / b.direct;
+                const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+                setTxt('wages-estimated-mo', this.formatCurrency(b.estimatedMo || 0));
+                setTxt('wages-real-total', this.formatCurrency(b.realWages || 0));
+                const advice = document.getElementById('wages-advice');
+                if(advice) {
+                    if((b.realWages||0) <= 0) advice.textContent = 'Sin jornales reales cargados. Sirve como referencia para comparar con la M.O. del cómputo.';
+                    else if((b.realWages||0) > (b.estimatedMo||0)) advice.textContent = 'Atención: los jornales reales superan la M.O. estimada. Revisá tus costos de mano de obra si corresponde.';
+                    else advice.textContent = 'Los jornales reales están por debajo o similares a la M.O. estimada del cómputo.';
+                }
+                this.renderExpenses();
             },
+            addWageRow: function() { this.ensureWages(); this.currentProject.wages.push({id:'wag_'+Math.random(), name:'', specialty:'Ayudante', days:1, rate:0}); this.autoSaveDraft(); this.renderWages(); },
+            updateWage: function(id, field, val) { const w=(this.currentProject.wages||[]).find(x=>x.id===id); if(!w) return; w[field] = (field==='days'||field==='rate') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderWages(); },
+            removeWage: function(id) { this.currentProject.wages=(this.currentProject.wages||[]).filter(w=>w.id!==id); this.autoSaveDraft(); this.renderWages(); this.renderProjectTable(); },
+            getExpensesTotal: function() { return (this.currentProject.expenses || []).reduce((a,e)=> a + ((Number(e.qty)||0) * (Number(e.unitCost)||0)), 0); },
+            getProfitAmount: function() { return 0; },
+            getFinalPrice: function() { const b = this.getProjectBaseTotals(); return b.direct; },
+            getBudgetSaleMultiplier: function() { return 1; },
             renderExpenses: function() {
                 this.ensureDefaultExpenses();
+                // Al entrar en Mis Gastos, sincroniza siempre el combustible calculado.
+                // Esto corrige líneas editables antiguas y mantiene el valor actualizado.
+                this.syncFuelExpense(true);
                 const tb = document.getElementById('expenses-table'); if(!tb) return;
                 tb.innerHTML = '';
                 this.currentProject.expenses.forEach(e => {
                     const total = (Number(e.qty)||0) * (Number(e.unitCost)||0);
-                    tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.category||''}" onchange="app.updateExpense('${e.id}','category',this.value)"></td><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2" value="${e.detail||''}" onchange="app.updateExpense('${e.id}','detail',this.value)"></td><td class="p-2 text-center"><input type="number" class="w-20 text-center border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.qty||0}" onchange="app.updateExpense('${e.id}','qty',this.value)"></td><td class="p-2 text-right"><input type="number" class="w-32 text-right border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.unitCost||0}" onchange="app.updateExpense('${e.id}','unitCost',this.value)"></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><button onclick="app.removeExpense('${e.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
+                    const locked = e.locked || e.fuelAuto || e.id === 'fuel_auto';
+                    if(locked) {
+                        tb.innerHTML += `<tr class="bg-emerald-50/60 border-l-4 border-emerald-500"><td class="p-2"><div class="w-full border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-black text-emerald-800">${e.category||''}</div></td><td class="p-2"><div class="w-full border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 text-slate-700">${e.detail||''}</div><div class="text-[10px] text-emerald-700 font-bold mt-1">Se actualiza desde Calculadoras &gt; Combustible</div></td><td class="p-2 text-center"><div class="w-20 mx-auto border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-bold">${e.qty||0}</div></td><td class="p-2 text-right"><div class="w-32 ml-auto border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-bold text-right">${this.formatCurrency(e.unitCost||0)}</div></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><i class="fa-solid fa-lock text-emerald-500" title="Gasto automático no editable"></i></td></tr>`;
+                    } else {
+                        tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.category||''}" onchange="app.updateExpense('${e.id}','category',this.value)"></td><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2" value="${e.detail||''}" onchange="app.updateExpense('${e.id}','detail',this.value)"></td><td class="p-2 text-center"><input type="number" class="w-20 text-center border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.qty||0}" onchange="app.updateExpense('${e.id}','qty',this.value)"></td><td class="p-2 text-right"><input type="number" class="w-32 text-right border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.unitCost||0}" onchange="app.updateExpense('${e.id}','unitCost',this.value)"></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><button onclick="app.removeExpense('${e.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
+                    }
                 });
-                const pp = document.getElementById('profit-percent'); if(pp) pp.value = this.currentProject.profitPercent ?? 30;
-                this.hydrateFuelInputs();
-                this.renderProfitSummary();
+                this.renderExpensesSummary();
             },
-            renderProfitSummary: function() {
-                const box = document.getElementById('profit-summary'); if(!box) return;
-                const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal(), prof = this.getProfitAmount(), final = this.getFinalPrice();
-                box.innerHTML = `<div class="flex justify-between"><span>Materiales</span><b>${this.formatCurrency(b.mat)}</b></div><div class="flex justify-between"><span>Mano de obra / jornales</span><b>${this.formatCurrency(b.mo)}</b></div><div class="flex justify-between"><span>Gastos adicionales</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between border-t border-slate-200 pt-2"><span>Costo total</span><b>${this.formatCurrency(b.direct + exp)}</b></div><div class="flex justify-between text-emerald-700"><span>Rentabilidad</span><b>${this.formatCurrency(prof)}</b></div>`;
-                const fp = document.getElementById('final-price-box'); if(fp) fp.textContent = this.formatCurrency(final);
+            renderExpensesSummary: function() {
+                const box = document.getElementById('expenses-summary');
+                const netBox = document.getElementById('expenses-net-box');
+                if(!box && !netBox) return;
+                const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal(), net = b.direct - exp;
+                if(box) box.innerHTML = `<div class="flex justify-between"><span>Presupuesto activo</span><b>${this.formatCurrency(b.direct)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between text-slate-500"><span>Jornales reales</span><b>${this.formatCurrency(b.realWages||0)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">Los jornales reales son informativos. Si superan la mano de obra del cómputo, conviene ajustar tus costos en Mis Costos.</div>`;
+                if(netBox) netBox.textContent = this.formatCurrency(net);
             },
-            addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
-            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
-            removeExpense: function(id) { this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); this.renderProjectTable(); },
-            updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderProfitSummary(); this.renderProjectTable(); },
+            renderProfitSummary: function() { this.renderExpensesSummary(); },
+            addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); },
+            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; if(e.locked || e.fuelAuto || e.id === 'fuel_auto') { this.showToast('El combustible calculado se modifica desde la solapa Calculadoras.'); this.renderExpenses(); return; } e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); },
+            removeExpense: function(id) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(e && (e.locked || e.fuelAuto || e.id === 'fuel_auto')) { this.showToast('El combustible calculado no se borra desde Mis Gastos. Se actualiza desde Calculadoras.'); return; } this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); },
+            updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderExpensesSummary(); },
 
             // --- IMPRESION ---
             openPrintModal: function() { document.getElementById('print-modal').className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"; },
             closePrintModal: function() { document.getElementById('print-modal').className="hidden"; },
 
             printSpecific: function(type) {
-                const b = this.getProjectBaseTotals(); const exp = this.getExpensesTotal(); const prof = this.getProfitAmount(); const final = this.getFinalPrice();
-                const title = type === 'gastos' ? 'Detalle de Gastos de Obra' : type === 'rentabilidad' ? 'Rentabilidad del Presupuesto' : 'Presupuesto de Obra';
+                const b = this.getProjectBaseTotals(); const exp = this.getExpensesTotal();
+                const title = type === 'gastos' ? 'Detalle de Gastos de Obra' : 'Presupuesto de Obra';
                 let rows = '';
                 if(type === 'gastos') {
-                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2>`;
-                } else if(type === 'rentabilidad') {
-                    rows = `<table><tbody><tr><td>Materiales</td><td>${this.formatCurrency(b.mat)}</td></tr><tr><td>Mano de obra / jornales</td><td>${this.formatCurrency(b.mo)}</td></tr><tr><td>Gastos adicionales</td><td>${this.formatCurrency(exp)}</td></tr><tr><td>Costo total</td><td>${this.formatCurrency(b.direct+exp)}</td></tr><tr><td>Rentabilidad (${this.currentProject.profitPercent||0}%)</td><td>${this.formatCurrency(prof)}</td></tr><tr><td><b>Precio sugerido</b></td><td><b>${this.formatCurrency(final)}</b></td></tr></tbody></table>`;
+                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Presupuesto activo - gastos: ${this.formatCurrency(b.direct-exp)}</h2>`;
                 } else {
                     rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const mat=(dbI.matPrice||0)*(i.qty||0); const mo=(dbI.laborPrice||0)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
                 const w = window.open('', '_blank');
-                w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
+                w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px;font-size:16px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
                 w.document.close(); w.focus(); setTimeout(()=>w.print(), 250);
             },
             executePrint: function() {
-                ['unit','mo','mat','subtot'].forEach(k => document.body.classList.toggle(`print-hide-${k}`, document.getElementById(`print-opt-${k}`).checked));
+                ['unit','mo','mat','subtot'].forEach(k => document.body.classList.remove(`print-hide-${k}`));
+                document.body.classList.remove('print-mode-total','print-mode-materiales','print-mode-mano','print-mode-planilla');
+                const mode = this.viewMode || 'TOTAL';
+                if(mode === 'TOTAL') { document.body.classList.add('print-mode-total'); }
+                if(mode === 'MATERIALES') { document.body.classList.add('print-hide-mo','print-mode-materiales'); }
+                if(mode === 'MANO DE OBRA') { document.body.classList.add('print-hide-mat','print-mode-mano'); }
+                if(mode === 'PLANILLA') { document.body.classList.add('print-hide-mat','print-hide-mo','print-hide-subtot','print-mode-planilla'); }
+                this.renderProjectTable();
+                ['unit','mo','mat','subtot'].forEach(k => {
+                    const opt = document.getElementById(`print-opt-${k}`);
+                    if(opt && opt.checked) document.body.classList.add(`print-hide-${k}`);
+                });
                 document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Obra';
                 document.getElementById('print-header-sub').textContent = this.userProfile.companySubtitle || '';
-                
-                // Mostrar datos extraídos del guardado Sismat si existen (Cliente, etc) en la impresión
                 let contactInfo = this.userProfile.companyContact || '';
                 const client = document.getElementById('save-client')?.value;
-                if(client) contactInfo += `\n\nCliente: ${client}`;
-                const address = document.getElementById('save-address')?.value;
-                if(address) contactInfo += `\nObra: ${address}`;
+                if(client) contactInfo += `
 
+Cliente: ${client}`;
+                const address = document.getElementById('save-address')?.value;
+                if(address) contactInfo += `
+Obra: ${address}`;
                 document.getElementById('print-header-contact').textContent = contactInfo;
                 document.getElementById('print-header-date').textContent = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
-                
                 const img = document.getElementById('print-logo-img'); if(this.userProfile.companyLogo) { img.src = this.userProfile.companyLogo; img.style.display = 'block'; } else img.style.display = 'none';
                 this.closePrintModal(); setTimeout(() => window.print(), 100);
             }
         };
 
+
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('print-mode-total','print-mode-materiales','print-mode-mano','print-mode-planilla');
+            if(window.app && app.renderProjectTable) app.renderProjectTable();
+        });
         window.addEventListener('DOMContentLoaded', () => app.init());
         document.addEventListener('contextmenu', e => e.preventDefault()); document.addEventListener('keydown', e => { if(e.key==='F12' || e.keyCode===123 || (e.ctrlKey && e.shiftKey && (e.key==='I' || e.key==='J')) || (e.ctrlKey && (e.key==='U' || e.key==='C'))) { e.preventDefault(); return false; } });
     </script>
