@@ -362,7 +362,7 @@
                     <button onclick="app.navigate('database')" id="nav-database" title="Editá tus costos maestros de materiales y mano de obra." class="hover:text-emerald-700 transition-colors">Mis Costos</button>
                     <button onclick="app.navigate('calculadoras')" id="nav-calculadoras" title="Calculá costos reales de obra como combustible y jornales." class="hover:text-emerald-700 transition-colors">Calculadoras</button>
                     <button onclick="app.navigate('gastos')" id="nav-gastos" title="Cargá gastos adicionales recuperables de la obra." class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
-                    <button onclick="app.navigate('indices')" id="nav-indices" title="Consultá variaciones mensuales y aplicá ajustes a tus costos." class="hover:text-emerald-700 transition-colors">Índices</button>
+                    <button onclick="app.navigate('indices')" id="nav-indices" title="Consultá variaciones mensuales y aplicá ajustes a tus costos." class="hover:text-emerald-700 transition-colors">Índices y Rentabilidad</button>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
@@ -689,39 +689,100 @@
     </template>
 
     <template id="view-indices">
-        <div class="p-4 md:p-8 w-full max-w-3xl mx-auto h-full overflow-y-auto fade-in flex items-center justify-center">
+        <div class="p-4 md:p-8 w-full max-w-7xl mx-auto h-full overflow-y-auto fade-in">
             <div class="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden w-full">
                 <div class="bg-gradient-to-r from-emerald-600 to-emerald-800 p-8 text-white text-center relative overflow-hidden">
                     <i class="fa-solid fa-chart-line text-6xl mb-4 opacity-20 absolute -right-4 -bottom-4 transform rotate-12"></i>
-                    <i class="fa-solid fa-bolt text-4xl mb-3 text-emerald-200 relative z-10"></i>
-                    <h2 class="text-2xl font-bold relative z-10">Índices y variación mensual</h2>
-                    <p class="text-sm text-emerald-100 mt-2 font-medium relative z-10 max-w-md mx-auto">Referencia informativa para saber cómo se movieron materiales y mano de obra. También podés aplicar ajustes a tu lista de costos.</p>
+                    <i class="fa-solid fa-sliders text-4xl mb-3 text-emerald-200 relative z-10"></i>
+                    <h2 class="text-2xl font-black relative z-10">Índices y Rentabilidad</h2>
+                    <p class="text-sm text-emerald-100 mt-2 font-medium relative z-10 max-w-3xl mx-auto">Separá la actualización mensual de costos de la rentabilidad comercial de cada presupuesto. Así mantenés clara tu lista base y flexible tu precio de venta.</p>
                 </div>
-                <div class="p-8 space-y-6">
+
+                <div class="p-6 md:p-8 space-y-6">
                     <div class="bg-slate-900 text-white rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <div class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Actualización informativa</div>
-                            <input type="text" id="index-label" value="Mayo 2026" class="bg-transparent text-xl font-black outline-none border-b border-white/20 focus:border-emerald-300 mt-1 w-full md:w-48">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-emerald-300">Referencia mensual visible para el usuario</div>
+                            <input type="text" id="index-label" value="Mayo 2026" class="bg-transparent text-xl font-black outline-none border-b border-white/20 focus:border-emerald-300 mt-1 w-full md:w-56" title="Mes o período de referencia">
                         </div>
                         <div class="grid grid-cols-2 gap-3 text-center">
-                            <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-300">Materiales</div><input type="number" id="index-monthly-mat" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none"> <span class="font-black">%</span></div>
-                            <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-300">Mano de obra</div><input type="number" id="index-monthly-mo" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none"> <span class="font-black">%</span></div>
+                            <div class="bg-white/10 rounded-xl p-3">
+                                <div class="text-[10px] uppercase font-bold text-slate-300">Materiales</div>
+                                <input type="number" id="index-monthly-mat" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none" title="Variación mensual informativa de materiales"> <span class="font-black">%</span>
+                            </div>
+                            <div class="bg-white/10 rounded-xl p-3">
+                                <div class="text-[10px] uppercase font-bold text-slate-300">Mano de obra</div>
+                                <input type="number" id="index-monthly-mo" value="0" class="bg-transparent text-2xl font-black text-center w-20 outline-none" title="Variación mensual informativa de mano de obra"> <span class="font-black">%</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
-                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aplicar aumento a Materiales (%)</label>
-                            <input type="number" id="input-inf-mat" placeholder="Ej: 5.4" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                        <!-- Índices por inflación -->
+                        <div class="bg-slate-50 border border-slate-200 rounded-3xl p-6 flex flex-col shadow-sm">
+                            <div class="flex items-start gap-4 mb-5">
+                                <div class="w-12 h-12 rounded-2xl bg-slate-800 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-chart-line"></i></div>
+                                <div>
+                                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Uso mensual</div>
+                                    <h3 class="text-xl font-black text-slate-800 leading-tight">Índices por inflación</h3>
+                                    <p class="text-sm text-slate-500 mt-1 leading-relaxed">Actualizá una vez por mes los costos generales de materiales y mano de obra según inflación, CAC o variación del mercado. Estos cambios quedan guardados en <b>Mis Costos</b>.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                                <div class="bg-white border border-slate-200 p-5 rounded-2xl">
+                                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento materiales (%)</label>
+                                    <input type="number" id="input-inf-mat" placeholder="Ej: 5.4" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 bg-white text-center">
+                                    <p class="text-[11px] text-slate-400 mt-2">Modifica la lista base de materiales.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-5 rounded-2xl">
+                                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aumento mano de obra (%)</label>
+                                    <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 bg-white text-center">
+                                    <p class="text-[11px] text-slate-400 mt-2">Modifica la lista base de mano de obra.</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <button onclick="app.saveIndexReference()" class="py-3 bg-white border border-slate-300 text-slate-700 rounded-2xl text-xs font-black hover:bg-slate-100 flex items-center justify-center gap-2"><i class="fa-solid fa-bookmark"></i> Guardar referencia</button>
+                                <button onclick="app.applyIndices()" class="py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Aplicar a Mis Costos</button>
+                                <button onclick="document.getElementById('input-inf-mat').value=''; document.getElementById('input-inf-mo').value=''; app.showToast('Campos de inflación limpiados.');" class="py-3 bg-white border border-slate-300 text-slate-500 rounded-2xl text-xs font-black hover:bg-red-50 hover:text-red-600 flex items-center justify-center gap-2"><i class="fa-solid fa-eraser"></i> Limpiar</button>
+                            </div>
                         </div>
-                        <div class="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
-                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Aplicar aumento a Mano de Obra (%)</label>
-                            <input type="number" id="input-inf-mo" placeholder="Ej: 8.0" class="w-full text-2xl p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 font-black text-slate-800 transition-all bg-white text-center">
+
+                        <!-- Rentabilidad presupuesto activo -->
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 flex flex-col shadow-sm">
+                            <div class="flex items-start gap-4 mb-5">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-briefcase"></i></div>
+                                <div>
+                                    <div class="text-[10px] font-black uppercase tracking-widest text-emerald-600">Por presupuesto</div>
+                                    <h3 class="text-xl font-black text-emerald-900 leading-tight">Tu rentabilidad</h3>
+                                    <p class="text-sm text-emerald-900/70 mt-1 leading-relaxed">Colocá tu rentabilidad sobre gestión de materiales y mano de obra solo para el presupuesto activo. No modifica <b>Mis Costos</b> y vuelve a 0 cuando creás un cómputo nuevo.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                                <div class="bg-white border border-emerald-200 p-5 rounded-2xl">
+                                    <label class="block text-xs font-bold text-emerald-700 mb-2 uppercase tracking-wider">Rentabilidad materiales (%)</label>
+                                    <input type="number" id="input-profit-mat" value="0" onchange="app.setProjectProfit('mat', this.value)" onkeyup="app.setProjectProfit('mat', this.value)" class="w-full text-2xl p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 font-black text-emerald-900 bg-white text-center">
+                                    <p class="text-[11px] text-emerald-700/70 mt-2">Ideal si gestionás o proveés materiales.</p>
+                                </div>
+                                <div class="bg-white border border-emerald-200 p-5 rounded-2xl">
+                                    <label class="block text-xs font-bold text-emerald-700 mb-2 uppercase tracking-wider">Rentabilidad mano de obra (%)</label>
+                                    <input type="number" id="input-profit-mo" value="0" onchange="app.setProjectProfit('mo', this.value)" onkeyup="app.setProjectProfit('mo', this.value)" class="w-full text-2xl p-3 border border-emerald-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 font-black text-emerald-900 bg-white text-center">
+                                    <p class="text-[11px] text-emerald-700/70 mt-2">Usalo según el margen de esa obra.</p>
+                                </div>
+                            </div>
+
+                            <div id="active-profit-info" class="bg-white border border-emerald-200 rounded-2xl p-4 text-sm text-slate-600 mb-4"></div>
+
+                            <div class="mt-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <button onclick="app.renderProjectTable(); app.renderExpensesSummary(); app.renderProfitActiveInfo(); app.autoSaveDraft(); app.showToast('Rentabilidad aplicada al presupuesto activo.');" class="py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black shadow-md flex items-center justify-center gap-2"><i class="fa-solid fa-check"></i> Aplicar</button>
+                                <button onclick="app.clearProjectProfit('mat')" class="py-3 bg-white border border-emerald-200 text-emerald-700 rounded-2xl text-xs font-black hover:bg-emerald-100 flex items-center justify-center gap-2"><i class="fa-solid fa-leaf"></i> Limpiar mat.</button>
+                                <button onclick="app.clearProjectProfit('mo')" class="py-3 bg-white border border-emerald-200 text-emerald-700 rounded-2xl text-xs font-black hover:bg-emerald-100 flex items-center justify-center gap-2"><i class="fa-solid fa-person-digging"></i> Limpiar M.O.</button>
+                            </div>
                         </div>
                     </div>
-                    <button onclick="app.applyIndices()" class="w-full py-4 mt-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition-all uppercase text-sm flex justify-center items-center gap-3">
-                        <i class="fa-solid fa-bolt text-amber-400"></i> Guardar referencia y aplicar ajustes
-                    </button>
-                    <p class="text-xs text-slate-500 leading-relaxed text-center">La información mensual es orientativa. Los aumentos solo modifican tus costos si completás los campos de aplicación.</p>
+
+                    <p class="text-xs text-slate-500 leading-relaxed text-center max-w-4xl mx-auto">Los índices por inflación actualizan tus costos maestros. La rentabilidad se aplica al presupuesto activo y al PDF del cliente, pero no se muestra como ítem separado.</p>
                 </div>
             </div>
         </div>
@@ -809,7 +870,7 @@
 
         window.app = {
             user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar' },
-            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
+            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
 
             checkSubscriptionStatus: function(u) { return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' }; }, // Forzamos Pro para esta etapa
 
@@ -935,7 +996,7 @@
                     if(wsName) wsName.textContent = this.currentProject.title ? `(${this.currentProject.title})` : '(Borrador sin guardar)';
                 }
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
-                if (viewId === 'indices') { const mi=this.currentProject.monthlyIndex||{label:'Mayo 2026',mat:0,mo:0}; const l=document.getElementById('index-label'); if(l) l.value=mi.label||'Mayo 2026'; const im=document.getElementById('index-monthly-mat'); if(im) im.value=mi.mat||0; const io=document.getElementById('index-monthly-mo'); if(io) io.value=mi.mo||0; }
+                if (viewId === 'indices') { const mi=this.currentProject.monthlyIndex||{label:'Mayo 2026',mat:0,mo:0}; const l=document.getElementById('index-label'); if(l) l.value=mi.label||'Mayo 2026'; const im=document.getElementById('index-monthly-mat'); if(im) im.value=mi.mat||0; const io=document.getElementById('index-monthly-mo'); if(io) io.value=mi.mo||0; const rp=this.currentProject.projectProfit||{mat:0,mo:0}; const rpm=document.getElementById('input-profit-mat'); if(rpm) rpm.value=rp.mat||0; const rpo=document.getElementById('input-profit-mo'); if(rpo) rpo.value=rp.mo||0; this.renderProfitActiveInfo(); }
                 if (viewId === 'calculadoras') { this.renderCalculators(); }
                 if (viewId === 'gastos') { this.renderExpenses(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
@@ -1036,6 +1097,16 @@
                 });
             },
             updateDbPrice: async function(id, f, val) { if(!this.user) return; const item = this.database.find(x => x.id === id); if(item) item[f] = parseFloat(val)||0; if(document.getElementById('project-items-table')) this.renderProjectTable(); try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); this.showToast('Costo actualizado.'); } catch(e){ this.showToast('No se pudo guardar el costo.'); } },
+            saveIndexReference: function() {
+                this.currentProject.monthlyIndex = {
+                    label: document.getElementById('index-label')?.value || 'Actualización mensual',
+                    mat: parseFloat(document.getElementById('index-monthly-mat')?.value) || 0,
+                    mo: parseFloat(document.getElementById('index-monthly-mo')?.value) || 0
+                };
+                this.autoSaveDraft();
+                this.handleUserAuthChange(this.user);
+                this.showToast('Referencia mensual guardada.');
+            },
             applyIndices: async function() {
                 if(!this.user) return;
                 const matPercVal = parseFloat(document.getElementById('input-inf-mat')?.value) || 0;
@@ -1061,6 +1132,36 @@
                     this.showToast('Índices actualizados.');
                 } catch(e){ this.showToast('No se pudieron aplicar los índices.'); }
             },
+            setProjectProfit: function(type, val) {
+                if(!this.currentProject.projectProfit) this.currentProject.projectProfit = { mat: 0, mo: 0 };
+                this.currentProject.projectProfit[type] = parseFloat(val) || 0;
+                this.autoSaveDraft();
+                this.renderProjectTable();
+                this.renderExpensesSummary();
+                this.renderProfitActiveInfo();
+            },
+            clearProjectProfit: function(type) {
+                if(!this.currentProject.projectProfit) this.currentProject.projectProfit = { mat: 0, mo: 0 };
+                this.currentProject.projectProfit[type] = 0;
+                const id = type === 'mat' ? 'input-profit-mat' : 'input-profit-mo';
+                const el = document.getElementById(id); if(el) el.value = 0;
+                this.autoSaveDraft();
+                this.renderProjectTable();
+                this.renderExpensesSummary();
+                this.renderProfitActiveInfo();
+                this.showToast('Rentabilidad del presupuesto actual limpiada.');
+            },
+            renderProfitActiveInfo: function() {
+                const box = document.getElementById('active-profit-info');
+                if(!box) return;
+                const t = this.getProjectBaseTotals();
+                const p = this.getProjectProfit();
+                box.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div><span class="text-xs text-slate-400 font-bold uppercase">Materiales</span><div class="font-black text-slate-800">${this.formatCurrency(t.mat)}</div><div class="text-[11px] text-slate-400">Base ${this.formatCurrency(t.baseMat)} · +${p.mat}%</div></div>
+                    <div><span class="text-xs text-slate-400 font-bold uppercase">Mano de obra</span><div class="font-black text-slate-800">${this.formatCurrency(t.mo)}</div><div class="text-[11px] text-slate-400">Base ${this.formatCurrency(t.baseMo)} · +${p.mo}%</div></div>
+                    <div><span class="text-xs text-slate-400 font-bold uppercase">Total presupuesto</span><div class="font-black text-emerald-700">${this.formatCurrency(t.direct)}</div><div class="text-[11px] text-slate-400">Rentabilidad incluida, sin ítem separado</div></div>
+                </div>`;
+            },
 
             // --- WORKSPACE (Draft Auto-save) ---
             loadDraftProject: function() { 
@@ -1072,6 +1173,7 @@
                         this.currentProject.title = data.title || '';
                         this.currentProject.expenses = data.expenses || this.currentProject.expenses || [];
                         this.currentProject.profitPercent = data.profitPercent ?? this.currentProject.profitPercent ?? 30;
+                        this.currentProject.projectProfit = data.projectProfit || this.currentProject.projectProfit || { mat: 0, mo: 0 };
                         this.currentProject.fuelCalc = data.fuelCalc || this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 };
                         this.currentProject.wages = data.wages || this.currentProject.wages || [];
                         this.currentProject.monthlyIndex = data.monthlyIndex || this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 };
@@ -1081,7 +1183,7 @@
             },
             autoSaveDraft: async function() {
                 if(!this.user) return;
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title, expenses: this.currentProject.expenses || [], profitPercent: this.currentProject.profitPercent || 0, fuelCalc: this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: this.currentProject.wages || [],
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), { items: this.currentProject.items, loadedId: this.currentProject.loadedId, title: this.currentProject.title, expenses: this.currentProject.expenses || [], profitPercent: this.currentProject.profitPercent || 0, projectProfit: this.currentProject.projectProfit || { mat: 0, mo: 0 }, fuelCalc: this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: this.currentProject.wages || [],
                     monthlyIndex: this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 }, monthlyIndex: this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 } }); } catch(e){}
             },
             clearProject: function() {
@@ -1091,6 +1193,7 @@
                     this.currentProject.title = '';
                     this.currentProject.expenses = [];
                     this.currentProject.profitPercent = 30;
+                    this.currentProject.projectProfit = { mat: 0, mo: 0 };
                     this.currentProject.fuelCalc = { km: 0, trips: 1, efficiency: 10, price: 2239 };
                     this.currentProject.wages = [];
                     this.autoSaveDraft();
@@ -1107,6 +1210,7 @@
                 this.currentProject.title = '';
                 this.currentProject.expenses = [];
                 this.currentProject.profitPercent = 30;
+                this.currentProject.projectProfit = { mat: 0, mo: 0 };
                 this.currentProject.fuelCalc = { km: 0, trips: 1, efficiency: 10, price: 2239 };
                 this.currentProject.wages = [];
                 this.autoSaveDraft();
@@ -1135,11 +1239,8 @@
                 const title = document.getElementById('save-title').value.trim();
                 if(!title) { alert('El Título del Cómputo es requerido.'); return; }
 
-                let totalMat = 0; let totalMo = 0;
-                this.currentProject.items.forEach(i => {
-                    const dbI = this.database.find(x => x.id === i.dbId);
-                    if(dbI) { totalMat += (dbI.matPrice * i.qty); totalMo += (dbI.laborPrice * i.qty); }
-                });
+                const totals = this.getProjectBaseTotals();
+                let totalMat = totals.mat; let totalMo = totals.mo;
 
                 const budgetData = {
                     title: title,
@@ -1153,7 +1254,10 @@
                     totalMo: totalMo,
                     expenses: this.currentProject.expenses || [],
                     profitPercent: this.currentProject.profitPercent || 0,
+                    projectProfit: this.currentProject.projectProfit || { mat: 0, mo: 0 },
                     fuelCalc: this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 },
+                    wages: this.currentProject.wages || [],
+                    monthlyIndex: this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 },
                     totalExpenses: this.getExpensesTotal(),
                     targetProfit: this.getProfitAmount(),
                     finalPrice: this.getFinalPrice(),
@@ -1212,6 +1316,7 @@
                 this.currentProject.title = b.title;
                 this.currentProject.expenses = b.expenses || [];
                 this.currentProject.profitPercent = b.profitPercent ?? 30;
+                this.currentProject.projectProfit = b.projectProfit || { mat: 0, mo: 0 };
                 this.currentProject.fuelCalc = b.fuelCalc || this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 };
                 this.currentProject.wages = b.wages || [];
                 this.currentProject.monthlyIndex = b.monthlyIndex || this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 };
@@ -1270,7 +1375,9 @@
             renderProjectTable: function() {
                 const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
                 const m = this.viewMode; const hm = m==='MANO DE OBRA'||m==='PLANILLA'; const hmo = m==='MATERIALES'||m==='PLANILLA'; const ht = m==='PLANILLA';
-                const multiplier = 1;
+                const p = this.getProjectProfit ? this.getProjectProfit() : { mat: 0, mo: 0 };
+                const matMultiplier = 1 + (p.mat / 100);
+                const laborMultiplier = 1 + (p.mo / 100);
                 th.innerHTML = `
                     <tr>
                         <th rowspan="2" class="p-2.5 text-center bg-[#f8fafc]">ÍTEM / DESCRIPCIÓN</th>
@@ -1296,8 +1403,8 @@
                 Object.keys(g).sort().forEach(c => {
                     tb.innerHTML += `<tr><td colspan="10" class="p-3 font-extrabold text-emerald-900 text-[11px] bg-emerald-100/50 uppercase tracking-wider">${c}</td></tr>`;
                     g[c].forEach(i => {
-                        const saleMatUnit = (Number(i.matPrice)||0) * multiplier;
-                        const saleLaborUnit = (Number(i.laborPrice)||0) * multiplier;
+                        const saleMatUnit = (Number(i.matPrice)||0) * matMultiplier;
+                        const saleLaborUnit = (Number(i.laborPrice)||0) * laborMultiplier;
                         const sm = saleMatUnit * (Number(i.qty)||0); const so = saleLaborUnit * (Number(i.qty)||0); const st = sm + so; tm += sm; to += so;
                         const visibleSubtotal = m === 'MATERIALES' ? sm : (m === 'MANO DE OBRA' ? so : st);
                         tb.innerHTML += `
@@ -1388,16 +1495,22 @@
 
 
             // --- GASTOS Y RENTABILIDAD ---
+            getProjectProfit: function() {
+                const p = this.currentProject.projectProfit || { mat: 0, mo: 0 };
+                return { mat: Number(p.mat) || 0, mo: Number(p.mo) || 0 };
+            },
             getProjectBaseTotals: function() {
-                let mat = 0, estimatedMo = 0;
+                let baseMat = 0, baseMo = 0;
                 (this.currentProject.items || []).forEach(i => {
                     const dbI = this.database.find(x => x.id === i.dbId) || i;
-                    mat += (Number(dbI.matPrice) || 0) * (Number(i.qty) || 0);
-                    estimatedMo += (Number(dbI.laborPrice) || 0) * (Number(i.qty) || 0);
+                    baseMat += (Number(dbI.matPrice) || 0) * (Number(i.qty) || 0);
+                    baseMo += (Number(dbI.laborPrice) || 0) * (Number(i.qty) || 0);
                 });
+                const p = this.getProjectProfit();
+                const mat = Math.round(baseMat * (1 + p.mat / 100));
+                const mo = Math.round(baseMo * (1 + p.mo / 100));
                 const realWages = this.getWagesTotal ? this.getWagesTotal() : 0;
-                const mo = estimatedMo;
-                return { mat, estimatedMo, realWages, mo, direct: mat + mo };
+                return { baseMat, baseMo, mat, estimatedMo: baseMo, realWages, mo, direct: mat + mo, profitMat: mat - baseMat, profitMo: mo - baseMo };
             },
             ensureDefaultExpenses: function() {
                 if(!this.currentProject.expenses || this.currentProject.expenses.length === 0) {
@@ -1590,7 +1703,7 @@
                 if(type === 'gastos') {
                     rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Presupuesto activo - gastos: ${this.formatCurrency(b.direct-exp)}</h2>`;
                 } else {
-                    rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const mat=(dbI.matPrice||0)*(i.qty||0); const mo=(dbI.laborPrice||0)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
+                    rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
                 const w = window.open('', '_blank');
                 w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px;font-size:16px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
