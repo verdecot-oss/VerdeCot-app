@@ -1383,7 +1383,7 @@
                         let h = `<div class="bg-slate-50 divide-y divide-slate-100/50 pb-2">`;
                         items.forEach(i => {
                             const sel = this.currentProject.items.some(x => x.dbId === i.id);
-                            h += `<div onclick="app.toggleItemInProject('${i.id}')" class="px-4 py-2.5 flex items-start gap-3 hover:bg-emerald-50 cursor-pointer text-[11px] font-medium transition-colors ${sel?'bg-emerald-100 text-emerald-900':'text-slate-600'}"><i class="fa-solid ${sel ? 'fa-square-check text-emerald-600' : 'fa-square text-slate-300'} mt-0.5 text-sm"></i><span class="flex-1 leading-tight">${i.name}</span></div>`;
+                            h += `<div onclick="app.toggleItemInProject('${i.id}')" class="px-4 py-2.5 flex items-start gap-3 hover:bg-emerald-50 cursor-pointer text-[11px] font-medium transition-colors ${sel?'bg-emerald-50/70 text-emerald-900 border-l-2 border-emerald-200':'text-slate-600'}"><i class="fa-solid ${sel ? 'fa-square-check text-emerald-600' : 'fa-square text-slate-300'} mt-0.5 text-sm"></i><span class="flex-1 leading-tight">${i.name}</span></div>`;
                         });
                         h += `</div>`; div.innerHTML += h;
                     }
