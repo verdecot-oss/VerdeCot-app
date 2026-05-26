@@ -658,9 +658,9 @@
                         <div id="expenses-summary" class="space-y-3 text-sm"></div>
                     </div>
                     <div class="bg-emerald-800 text-white rounded-2xl shadow-sm p-5">
-                        <h3 class="font-bold text-emerald-100 mb-3">Resultado estimado</h3>
+                        <h3 class="font-bold text-emerald-100 mb-3">Ganancia estimada</h3>
                         <div id="expenses-net-box" class="text-3xl font-black">$0</div>
-                        <p class="text-xs text-emerald-100 mt-2">Presupuesto activo menos gastos cargados. No incluye jornales reales informativos.</p>
+                        <p class="text-xs text-emerald-100 mt-2">Presupuesto activo menos combustible, jornales reales y gastos cargados.</p>
                     </div>
                 </div>
             </div>
@@ -1668,6 +1668,36 @@
             getWagesTotal: function() {
                 return (this.currentProject.wages || []).reduce((a,w)=> a + ((Number(w.days)||0) * (Number(w.rate)||0)), 0);
             },
+            syncWageExpense: function(createIfMissing = true) {
+                const total = this.getWagesTotal ? Math.round(this.getWagesTotal()) : 0;
+                if(!this.currentProject.expenses) this.currentProject.expenses = [];
+                let wage = this.currentProject.expenses.find(e => e.wagesAuto === true || e.id === 'wages_auto');
+                // Siempre crea/mantiene una línea fija para Jornales reales, aun si el total es $0.
+                // Así el usuario ve claramente que este valor viene desde Calculadoras > Jornales reales.
+                if(!wage && createIfMissing) {
+                    wage = { id:'wages_auto', category:'Jornales reales calculados', detail:'Sin jornales reales cargados', qty:1, unitCost:0, locked:true, wagesAuto:true };
+                    this.currentProject.expenses.push(wage);
+                }
+                if(wage) {
+                    wage.id = 'wages_auto';
+                    wage.category = 'Jornales reales calculados';
+                    const count = (this.currentProject.wages || []).length;
+                    wage.detail = total > 0 ? `${count} trabajador/es cargados desde Calculadoras > Jornales reales` : 'Sin jornales reales cargados';
+                    wage.qty = 1;
+                    wage.unitCost = total;
+                    wage.locked = true;
+                    wage.wagesAuto = true;
+                }
+                let found = false;
+                this.currentProject.expenses = this.currentProject.expenses.filter(e => {
+                    const isWage = e.id === 'wages_auto' || e.wagesAuto === true || String(e.category || '').trim().toLowerCase().startsWith('jornales reales');
+                    if(!isWage) return true;
+                    if(!found && wage) { found = true; return true; }
+                    return false;
+                });
+                if(wage && !this.currentProject.expenses.includes(wage)) this.currentProject.expenses.push(wage);
+                return wage || null;
+            },
             renderCalculators: function() {
                 this.hydrateFuelInputs();
                 this.renderWages();
@@ -1694,11 +1724,12 @@
                     else if((b.realWages||0) > (b.estimatedMo||0)) advice.textContent = 'Atención: los jornales reales superan la M.O. estimada. Revisá tus costos de mano de obra si corresponde.';
                     else advice.textContent = 'Los jornales reales están por debajo o similares a la M.O. estimada del cómputo.';
                 }
+                this.syncWageExpense(true);
                 this.renderExpenses();
             },
             addWageRow: function() { this.ensureWages(); this.currentProject.wages.push({id:'wag_'+Math.random(), name:'', specialty:'Ayudante', days:1, rate:0}); this.autoSaveDraft(); this.renderWages(); },
-            updateWage: function(id, field, val) { const w=(this.currentProject.wages||[]).find(x=>x.id===id); if(!w) return; w[field] = (field==='days'||field==='rate') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderWages(); },
-            removeWage: function(id) { this.currentProject.wages=(this.currentProject.wages||[]).filter(w=>w.id!==id); this.autoSaveDraft(); this.renderWages(); this.renderProjectTable(); },
+            updateWage: function(id, field, val) { const w=(this.currentProject.wages||[]).find(x=>x.id===id); if(!w) return; w[field] = (field==='days'||field==='rate') ? (parseFloat(val)||0) : val; this.syncWageExpense(true); this.autoSaveDraft(); this.renderWages(); },
+            removeWage: function(id) { this.currentProject.wages=(this.currentProject.wages||[]).filter(w=>w.id!==id); this.syncWageExpense(true); this.autoSaveDraft(); this.renderWages(); this.renderProjectTable(); },
             getExpensesTotal: function() { return (this.currentProject.expenses || []).reduce((a,e)=> a + ((Number(e.qty)||0) * (Number(e.unitCost)||0)), 0); },
             getProfitAmount: function() { return 0; },
             getFinalPrice: function() { const b = this.getProjectBaseTotals(); return b.direct; },
@@ -1708,13 +1739,16 @@
                 // Al entrar en Mis Gastos, sincroniza siempre el combustible calculado.
                 // Esto corrige líneas editables antiguas y mantiene el valor actualizado.
                 this.syncFuelExpense(true);
+                this.syncWageExpense(true);
                 const tb = document.getElementById('expenses-table'); if(!tb) return;
                 tb.innerHTML = '';
                 this.currentProject.expenses.forEach(e => {
                     const total = (Number(e.qty)||0) * (Number(e.unitCost)||0);
-                    const locked = e.locked || e.fuelAuto || e.id === 'fuel_auto';
+                    const locked = e.locked || e.fuelAuto || e.wagesAuto || e.id === 'fuel_auto' || e.id === 'wages_auto';
                     if(locked) {
-                        tb.innerHTML += `<tr class="bg-emerald-50/60 border-l-4 border-emerald-500"><td class="p-2"><div class="w-full border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-black text-emerald-800">${e.category||''}</div></td><td class="p-2"><div class="w-full border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 text-slate-700">${e.detail||''}</div><div class="text-[10px] text-emerald-700 font-bold mt-1">Se actualiza desde Calculadoras &gt; Combustible</div></td><td class="p-2 text-center"><div class="w-20 mx-auto border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-bold">${e.qty||0}</div></td><td class="p-2 text-right"><div class="w-32 ml-auto border border-emerald-100 bg-emerald-50 rounded-lg px-2 py-2 font-bold text-right">${this.formatCurrency(e.unitCost||0)}</div></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><i class="fa-solid fa-lock text-emerald-500" title="Gasto automático no editable"></i></td></tr>`;
+                        const isWage = e.wagesAuto || e.id === 'wages_auto';
+                        const c = isWage ? { row:'bg-blue-50/60 border-l-4 border-blue-500', border:'border-blue-100', bg:'bg-blue-50', text:'text-blue-800', lock:'text-blue-500', note:'Se actualiza desde Calculadoras > Jornales reales' } : { row:'bg-emerald-50/60 border-l-4 border-emerald-500', border:'border-emerald-100', bg:'bg-emerald-50', text:'text-emerald-800', lock:'text-emerald-500', note:'Se actualiza desde Calculadoras > Combustible' };
+                        tb.innerHTML += `<tr class="${c.row}"><td class="p-2"><div class="w-full border ${c.border} ${c.bg} rounded-lg px-2 py-2 font-black ${c.text}">${e.category||''}</div></td><td class="p-2"><div class="w-full border ${c.border} ${c.bg} rounded-lg px-2 py-2 text-slate-700">${e.detail||''}</div><div class="text-[10px] ${c.text} font-bold mt-1">${c.note}</div></td><td class="p-2 text-center"><div class="w-20 mx-auto border ${c.border} ${c.bg} rounded-lg px-2 py-2 font-bold">${e.qty||0}</div></td><td class="p-2 text-right"><div class="w-32 ml-auto border ${c.border} ${c.bg} rounded-lg px-2 py-2 font-bold text-right">${this.formatCurrency(e.unitCost||0)}</div></td><td class="p-3 text-right font-black ${c.text}">${this.formatCurrency(total)}</td><td class="p-2 text-center"><i class="fa-solid fa-lock ${c.lock}" title="Gasto automático no editable"></i></td></tr>`;
                     } else {
                         tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.category||''}" onchange="app.updateExpense('${e.id}','category',this.value)"></td><td class="p-2"><input class="w-full border border-slate-200 rounded-lg px-2 py-2" value="${e.detail||''}" onchange="app.updateExpense('${e.id}','detail',this.value)"></td><td class="p-2 text-center"><input type="number" class="w-20 text-center border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.qty||0}" onchange="app.updateExpense('${e.id}','qty',this.value)"></td><td class="p-2 text-right"><input type="number" class="w-32 text-right border border-slate-200 rounded-lg px-2 py-2 font-bold" value="${e.unitCost||0}" onchange="app.updateExpense('${e.id}','unitCost',this.value)"></td><td class="p-3 text-right font-black text-emerald-800">${this.formatCurrency(total)}</td><td class="p-2 text-center"><button onclick="app.removeExpense('${e.id}')" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
                     }
@@ -1728,13 +1762,13 @@
                 const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal();
                 const active = this.getActiveBudgetTotal ? this.getActiveBudgetTotal() : { amount: b.direct, label: 'Presupuesto activo' };
                 const net = active.amount - exp;
-                if(box) box.innerHTML = `<div class="flex justify-between"><span>${active.label}</span><b>${this.formatCurrency(active.amount)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between text-slate-500"><span>Jornales reales</span><b>${this.formatCurrency(b.realWages||0)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">El resumen usa la solapa activa del cómputo: Total, Materiales o Mano de obra. Los jornales reales son informativos.</div>`;
+                if(box) box.innerHTML = `<div class="flex justify-between"><span>${active.label}</span><b>${this.formatCurrency(active.amount)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">El resumen usa la solapa activa del cómputo: Total, Materiales o Mano de obra. Combustible y jornales calculados se descuentan como gastos automáticos.</div>`;
                 if(netBox) netBox.textContent = this.formatCurrency(net);
             },
             renderProfitSummary: function() { this.renderExpensesSummary(); },
             addExpenseRow: function() { this.ensureDefaultExpenses(); this.currentProject.expenses.push({id:'exp_'+Math.random(), category:'Nuevo gasto', detail:'', qty:1, unitCost:0}); this.autoSaveDraft(); this.renderExpenses(); },
-            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; if(e.locked || e.fuelAuto || e.id === 'fuel_auto') { this.showToast('El combustible calculado se modifica desde la solapa Calculadoras.'); this.renderExpenses(); return; } e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); },
-            removeExpense: function(id) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(e && (e.locked || e.fuelAuto || e.id === 'fuel_auto')) { this.showToast('El combustible calculado no se borra desde Mis Gastos. Se actualiza desde Calculadoras.'); return; } this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); },
+            updateExpense: function(id, field, val) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(!e) return; if(e.locked || e.fuelAuto || e.wagesAuto || e.id === 'fuel_auto' || e.id === 'wages_auto') { this.showToast('Este gasto automático se modifica desde la solapa Calculadoras.'); this.renderExpenses(); return; } e[field] = (field==='qty'||field==='unitCost') ? (parseFloat(val)||0) : val; this.autoSaveDraft(); this.renderExpenses(); },
+            removeExpense: function(id) { const e=(this.currentProject.expenses||[]).find(x=>x.id===id); if(e && (e.locked || e.fuelAuto || e.wagesAuto || e.id === 'fuel_auto' || e.id === 'wages_auto')) { this.showToast('Este gasto automático no se borra desde Mis Gastos. Se actualiza desde Calculadoras.'); return; } this.currentProject.expenses=(this.currentProject.expenses||[]).filter(e=>e.id!==id); this.autoSaveDraft(); this.renderExpenses(); },
             updateProfitPercent: function(v) { this.currentProject.profitPercent = parseFloat(v)||0; this.autoSaveDraft(); this.renderExpensesSummary(); },
 
             // --- IMPRESION ---
@@ -1746,7 +1780,7 @@
                 const title = type === 'gastos' ? 'Detalle de Gastos de Obra' : 'Presupuesto de Obra';
                 let rows = '';
                 if(type === 'gastos') {
-                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Presupuesto activo - gastos: ${this.formatCurrency(b.direct-exp)}</h2>`;
+                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Ganancia estimada: ${this.formatCurrency(b.direct-exp)}</h2>`;
                 } else {
                     rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
