@@ -876,7 +876,7 @@
 
         window.app = {
             user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar' },
-            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: { '01 - Trabajos Preliminares': true }, viewMode: 'TOTAL', isLoginMode: true,
+            database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: {}, viewMode: 'TOTAL', isLoginMode: true,
 
             checkSubscriptionStatus: function(u) { return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' }; }, // Forzamos Pro para esta etapa
 
@@ -1370,8 +1370,15 @@
                 const list = document.getElementById('catalog-list'); if(!list) return; list.innerHTML = ''; const f = fVal.toLowerCase(); const cats = [...new Set(this.database.map(i => i.category))].sort();
                 cats.forEach(c => {
                     const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const exp = f ? true : this.expandedCategories[c];
+                    const categoryHasSelected = this.currentProject.items.some(x => {
+                        const dbItem = this.database.find(i => i.id === x.dbId);
+                        return dbItem && dbItem.category === c;
+                    });
+                    const catButtonClass = categoryHasSelected
+                        ? "w-full flex justify-between p-3.5 bg-emerald-100 hover:bg-emerald-100 text-xs font-black text-emerald-900 transition-colors border-l-4 border-emerald-500"
+                        : "w-full flex justify-between p-3.5 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors";
                     const div = document.createElement('div'); div.className = "border-b border-slate-200";
-                    div.innerHTML = `<button onclick="app.toggleCategory('${c}')" class="w-full flex justify-between p-3.5 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"><span class="truncate">${c}</span><i class="fa-solid ${exp ? 'fa-chevron-down text-emerald-500' : 'fa-chevron-right text-slate-400'} transition-transform"></i></button>`;
+                    div.innerHTML = `<button onclick="app.toggleCategory('${c}')" class="${catButtonClass}"><span class="truncate">${c}</span><i class="fa-solid ${exp ? 'fa-chevron-down text-emerald-500' : 'fa-chevron-right text-slate-400'} transition-transform"></i></button>`;
                     if(exp) {
                         let h = `<div class="bg-slate-50 divide-y divide-slate-100/50 pb-2">`;
                         items.forEach(i => {
