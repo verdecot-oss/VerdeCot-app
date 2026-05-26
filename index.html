@@ -863,6 +863,12 @@
             { id: '501', category: '05 - Plantaciones (Arbustos)', name: 'Arbustos 4L (Buxus, Eugenia, Oleotex)', unit: 'U', matPrice: 5500, laborPrice: 1800 },
             { id: '603', category: '06 - Riego Automático', name: 'Toberas emergentes (Cuerpo + Boquilla)', unit: 'U', matPrice: 9500, laborPrice: 3500 },
             { id: '701', category: '07 - Obra Civil en Jardín', name: 'Mampostería p/ canteros elevados (Ladrillo hueco)', unit: 'M2', matPrice: 14500, laborPrice: 24000 },
+            { id: 'ocj-cont-hierro-1x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 1"x1/8 c/estacas', unit: 'ML', matPrice: 3259.17, laborPrice: 3500 },
+            { id: 'ocj-cont-hierro-2x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 2"x1/8 c/estacas', unit: 'ML', matPrice: 5291, laborPrice: 5500 },
+            { id: 'ocj-cont-hierro-3x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 3"x1/8 c/estacas', unit: 'ML', matPrice: 8285, laborPrice: 8500 },
+            { id: 'ocj-cont-hierro-4x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 4"x1/8 c/estacas', unit: 'ML', matPrice: 9960, laborPrice: 10500 },
+            { id: 'ocj-cont-quebracho-cepillado', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho cepillado c/estacas', unit: 'ML', matPrice: 9666, laborPrice: 10700 },
+            { id: '707', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho rústico c/estacas', unit: 'ML', matPrice: 8500, laborPrice: 10700 },
             { id: '801', category: '08 - Iluminación Exterior', name: 'Estacas LED para plantas (Artefacto + Lámpara)', unit: 'U', matPrice: 18000, laborPrice: 6500 },
             { id: '903', category: '09 - Mantenimiento y Poda', name: 'Corte de césped general (Hasta 1000m2)', unit: 'M2', matPrice: 0, laborPrice: 150 },
             { id: '1201', category: '12 - Diseño y Modelado', name: 'Diseño de paisaje completo y anteproyecto conceptual', unit: 'GL', matPrice: 20000, laborPrice: 180000 }
@@ -1086,10 +1092,18 @@
             loadDatabase: function() {
                 onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), async (globalSnap) => {
                     if (globalSnap.empty) { const batch = writeBatch(db); INITIAL_CATALOG.forEach(i => batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), i)); await batch.commit(); return; }
+                    const existingIds = new Set(globalSnap.docs.map(d => d.id));
+                    const missingBaseItems = INITIAL_CATALOG.filter(i => !existingIds.has(i.id));
+                    if (missingBaseItems.length) {
+                        const batch = writeBatch(db);
+                        missingBaseItems.forEach(i => batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), i));
+                        await batch.commit();
+                        return;
+                    }
                     const g = globalSnap.docs.map(d => ({id: d.id, ...d.data()}));
                     onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
                         const c = {}; uSnap.forEach(d => { c[d.id] = d.data(); });
-                        this.database = g.map(i => { const o = c[i.id]; return { ...i, matPrice: o?.matPrice ?? i.matPrice, laborPrice: o?.laborPrice ?? i.laborPrice }; }).sort((a,b)=>a.category.localeCompare(b.category));
+                        this.database = g.map(i => { const o = c[i.id]; return { ...i, matPrice: o?.matPrice ?? i.matPrice, laborPrice: o?.laborPrice ?? i.laborPrice }; }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
                         if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
                         if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
                         if(document.getElementById('project-items-table')) this.renderProjectTable();
@@ -1355,7 +1369,7 @@
             renderCatalog: function(fVal) {
                 const list = document.getElementById('catalog-list'); if(!list) return; list.innerHTML = ''; const f = fVal.toLowerCase(); const cats = [...new Set(this.database.map(i => i.category))].sort();
                 cats.forEach(c => {
-                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)); if(f && !items.length) return; const exp = f ? true : this.expandedCategories[c];
+                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const exp = f ? true : this.expandedCategories[c];
                     const div = document.createElement('div'); div.className = "border-b border-slate-200";
                     div.innerHTML = `<button onclick="app.toggleCategory('${c}')" class="w-full flex justify-between p-3.5 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"><span class="truncate">${c}</span><i class="fa-solid ${exp ? 'fa-chevron-down text-emerald-500' : 'fa-chevron-right text-slate-400'} transition-transform"></i></button>`;
                     if(exp) {
@@ -1402,7 +1416,7 @@
 
                 Object.keys(g).sort().forEach(c => {
                     tb.innerHTML += `<tr><td colspan="10" class="p-3 font-extrabold text-emerald-900 text-[11px] bg-emerald-100/50 uppercase tracking-wider">${c}</td></tr>`;
-                    g[c].forEach(i => {
+                    g[c].sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})).forEach(i => {
                         const saleMatUnit = (Number(i.matPrice)||0) * matMultiplier;
                         const saleLaborUnit = (Number(i.laborPrice)||0) * laborMultiplier;
                         const sm = saleMatUnit * (Number(i.qty)||0); const so = saleLaborUnit * (Number(i.qty)||0); const st = sm + so; tm += sm; to += so;
@@ -1440,7 +1454,7 @@
                 }
                 const cats = [...new Set(filtered.map(i => i.category))].sort();
                 cats.forEach(c => {
-                    const items = filtered.filter(i => i.category === c);
+                    const items = filtered.filter(i => i.category === c).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
                     const exp = f ? true : (this.expandedCategories[c] !== false);
                     const totalMat = items.reduce((a,i)=>a+(Number(i.matPrice)||0),0);
                     const totalMo = items.reduce((a,i)=>a+(Number(i.laborPrice)||0),0);
