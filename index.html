@@ -529,16 +529,16 @@
 
                         <!-- Bloque de Totales -->
                         <div id="budget-summary-block" class="bg-emerald-800 text-white mt-4 rounded-xl flex flex-col items-end justify-center p-6 shadow-md">
-                            <div class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2">
+                            <div id="summary-row-mat" class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2">
                                 <span class="flex-1 text-right pr-4">Materiales</span>
                                 <span id="summary-mat" class="w-32 text-right font-bold text-white tracking-wide">$0</span>
                             </div>
-                            <div class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2 mt-1.5">
+                            <div id="summary-row-mo" class="text-sm font-semibold text-emerald-100 flex justify-end w-full sm:w-2/3 md:w-1/2 mt-1.5">
                                 <span class="flex-1 text-right pr-4">Mano de obra</span>
                                 <span id="summary-mo" class="w-32 text-right font-bold text-white tracking-wide">$0</span>
                             </div>
                             <div class="text-2xl md:text-3xl font-black text-white flex justify-end w-full sm:w-2/3 md:w-1/2 mt-4 pt-4 border-t border-emerald-700/50">
-                                <span class="flex-1 text-right pr-4 tracking-tight">Total General</span>
+                                <span id="summary-total-label" class="flex-1 text-right pr-4 tracking-tight">Total General</span>
                                 <span id="summary-total" class="w-40 text-right tracking-tight">$0</span>
                             </div>
                         </div>
@@ -1384,7 +1384,16 @@
                 });
             },
 
-            setViewMode: function(m) { this.viewMode = m; ['TOTAL','MATERIALES','MANO DE OBRA','PLANILLA'].forEach(x => { const b = document.getElementById(`btn-mode-${x.replace(/ /g, '')}`); if(b) b.className = x === m ? "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm font-bold" : "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200 text-slate-600 font-bold"; }); this.renderProjectTable(); },
+            setViewMode: function(m) { 
+                this.viewMode = m; 
+                const btnIds = { 'TOTAL':'btn-mode-TOTAL', 'MATERIALES':'btn-mode-MATERIALES', 'MANO DE OBRA':'btn-mode-MANO DE OBRA', 'PLANILLA':'btn-mode-PLANILLA' };
+                ['TOTAL','MATERIALES','MANO DE OBRA','PLANILLA'].forEach(x => { 
+                    const b = document.getElementById(btnIds[x]); 
+                    if(b) b.className = x === m ? "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm font-bold" : "flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-slate-100 hover:bg-slate-200 text-slate-400 font-bold opacity-80"; 
+                }); 
+                this.renderProjectTable(); 
+                this.renderExpensesSummary();
+            },
 
             renderProjectTable: function() {
                 const th = document.getElementById('table-header'); const tb = document.getElementById('project-items-table'); if(!th || !tb) return;
@@ -1436,7 +1445,18 @@
                         `;
                     });
                 });
-                if(document.getElementById('summary-mat')) { document.getElementById('summary-mat').textContent = this.formatCurrency(tm); document.getElementById('summary-mo').textContent = this.formatCurrency(to); document.getElementById('summary-total').textContent = this.formatCurrency(tm + to); }
+                if(document.getElementById('summary-mat')) { 
+                    const rowMat = document.getElementById('summary-row-mat');
+                    const rowMo = document.getElementById('summary-row-mo');
+                    const totalLabel = document.getElementById('summary-total-label');
+                    const activeTotal = m === 'MATERIALES' ? tm : (m === 'MANO DE OBRA' ? to : tm + to);
+                    document.getElementById('summary-mat').textContent = this.formatCurrency(tm); 
+                    document.getElementById('summary-mo').textContent = this.formatCurrency(to); 
+                    document.getElementById('summary-total').textContent = this.formatCurrency(activeTotal); 
+                    if(rowMat) rowMat.classList.toggle('hidden', m === 'MANO DE OBRA' || m === 'PLANILLA');
+                    if(rowMo) rowMo.classList.toggle('hidden', m === 'MATERIALES' || m === 'PLANILLA');
+                    if(totalLabel) totalLabel.textContent = m === 'MATERIALES' ? 'Total Materiales' : (m === 'MANO DE OBRA' ? 'Total Mano de obra' : 'Total General');
+                }
             },
 
             renderDatabaseTable: function(fVal) {
@@ -1526,6 +1546,15 @@
                 const realWages = this.getWagesTotal ? this.getWagesTotal() : 0;
                 return { baseMat, baseMo, mat, estimatedMo: baseMo, realWages, mo, direct: mat + mo, profitMat: mat - baseMat, profitMo: mo - baseMo };
             },
+            getActiveBudgetTotal: function() {
+                const b = this.getProjectBaseTotals();
+                const m = this.viewMode || 'TOTAL';
+                if(m === 'MATERIALES') return { amount: b.mat, label: 'Presupuesto activo (materiales)' };
+                if(m === 'MANO DE OBRA') return { amount: b.mo, label: 'Presupuesto activo (mano de obra)' };
+                if(m === 'PLANILLA') return { amount: b.direct, label: 'Presupuesto activo' };
+                return { amount: b.direct, label: 'Presupuesto activo (total)' };
+            },
+
             ensureDefaultExpenses: function() {
                 if(!this.currentProject.expenses || this.currentProject.expenses.length === 0) {
                     this.currentProject.expenses = [
@@ -1696,8 +1725,10 @@
                 const box = document.getElementById('expenses-summary');
                 const netBox = document.getElementById('expenses-net-box');
                 if(!box && !netBox) return;
-                const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal(), net = b.direct - exp;
-                if(box) box.innerHTML = `<div class="flex justify-between"><span>Presupuesto activo</span><b>${this.formatCurrency(b.direct)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between text-slate-500"><span>Jornales reales</span><b>${this.formatCurrency(b.realWages||0)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">Los jornales reales son informativos. Si superan la mano de obra del cómputo, conviene ajustar tus costos en Mis Costos.</div>`;
+                const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal();
+                const active = this.getActiveBudgetTotal ? this.getActiveBudgetTotal() : { amount: b.direct, label: 'Presupuesto activo' };
+                const net = active.amount - exp;
+                if(box) box.innerHTML = `<div class="flex justify-between"><span>${active.label}</span><b>${this.formatCurrency(active.amount)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="flex justify-between text-slate-500"><span>Jornales reales</span><b>${this.formatCurrency(b.realWages||0)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">El resumen usa la solapa activa del cómputo: Total, Materiales o Mano de obra. Los jornales reales son informativos.</div>`;
                 if(netBox) netBox.textContent = this.formatCurrency(net);
             },
             renderProfitSummary: function() { this.renderExpensesSummary(); },
