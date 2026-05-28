@@ -868,6 +868,11 @@
             { id: 'ocj-cont-hierro-3x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 3"x1/8 c/estacas', unit: 'ML', matPrice: 8285, laborPrice: 8500 },
             { id: 'ocj-cont-hierro-4x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 4"x1/8 c/estacas', unit: 'ML', matPrice: 9960, laborPrice: 10500 },
             { id: 'ocj-cont-quebracho-cepillado', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho cepillado c/estacas', unit: 'ML', matPrice: 9666, laborPrice: 10700 },
+
+            { id: 'ocj-durmiente-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Durmientes Quebracho 1 mt colorado', unit: 'ML', matPrice: 16000, laborPrice: 0 },
+            { id: 'ocj-durmiente-q-1m-blanco', category: '07 - Obra Civil en Jardín', name: 'Durmientes Quebracho 1 mt blanco', unit: 'ML', matPrice: 20000, laborPrice: 0 },
+            { id: 'ocj-tabla-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Tabla Quebracho 1 mt colorado', unit: 'ML', matPrice: 14000, laborPrice: 0 },
+            { id: 'ocj-tabla-q-1m-blanco', category: '07 - Obra Civil en Jardín', name: 'Tabla Quebracho 1 mt blanco', unit: 'ML', matPrice: 17000, laborPrice: 0 },
             { id: '707', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho rústico c/estacas', unit: 'ML', matPrice: 8500, laborPrice: 10700 },
             { id: '801', category: '08 - Iluminación Exterior', name: 'Estacas LED para plantas (Artefacto + Lámpara)', unit: 'U', matPrice: 18000, laborPrice: 6500 },
             { id: '903', category: '09 - Mantenimiento y Poda', name: 'Corte de césped general (Hasta 1000m2)', unit: 'M2', matPrice: 0, laborPrice: 150 },
@@ -1101,9 +1106,38 @@
                         return;
                     }
                     const g = globalSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                    const baseById = Object.fromEntries(INITIAL_CATALOG.map(i => [i.id, i]));
+                    const unitFixItems = ['ocj-durmiente-q-1m-color','ocj-durmiente-q-1m-blanco','ocj-tabla-q-1m-color','ocj-tabla-q-1m-blanco'];
+                    const docsToFix = g.filter(i => unitFixItems.includes(i.id) && i.unit !== 'ML');
+                    if (docsToFix.length) {
+                        const batchFix = writeBatch(db);
+                        docsToFix.forEach(i => {
+                            const b = baseById[i.id];
+                            batchFix.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), {
+                                category: b.category,
+                                name: b.name,
+                                unit: 'ML',
+                                matPrice: b.matPrice,
+                                laborPrice: b.laborPrice
+                            }, { merge: true });
+                        });
+                        await batchFix.commit();
+                        return;
+                    }
                     onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
                         const c = {}; uSnap.forEach(d => { c[d.id] = d.data(); });
-                        this.database = g.map(i => { const o = c[i.id]; return { ...i, matPrice: o?.matPrice ?? i.matPrice, laborPrice: o?.laborPrice ?? i.laborPrice }; }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
+                        this.database = g.map(i => {
+                            const base = INITIAL_CATALOG.find(b => b.id === i.id);
+                            const o = c[i.id];
+                            return {
+                                ...i,
+                                category: base?.category ?? i.category,
+                                name: base?.name ?? i.name,
+                                unit: base?.unit ?? i.unit,
+                                matPrice: o?.matPrice ?? i.matPrice ?? base?.matPrice ?? 0,
+                                laborPrice: o?.laborPrice ?? i.laborPrice ?? base?.laborPrice ?? 0
+                            };
+                        }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
                         if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
                         if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
                         if(document.getElementById('project-items-table')) this.renderProjectTable();
@@ -1177,6 +1211,24 @@
                 </div>`;
             },
 
+
+            normalizeQuebrachoUnits: function() {
+                const ids = ['ocj-durmiente-q-1m-color','ocj-durmiente-q-1m-blanco','ocj-tabla-q-1m-color','ocj-tabla-q-1m-blanco'];
+                if(!this.currentProject || !Array.isArray(this.currentProject.items)) return;
+                this.currentProject.items.forEach(i => {
+                    if(ids.includes(i.dbId) || ids.includes(i.id)) {
+                        const dbI = this.database.find(x => x.id === (i.dbId || i.id));
+                        i.unit = 'ML';
+                        if(dbI) {
+                            i.name = dbI.name;
+                            i.category = dbI.category;
+                            i.matPrice = dbI.matPrice;
+                            i.laborPrice = dbI.laborPrice;
+                        }
+                    }
+                });
+            },
+
             // --- WORKSPACE (Draft Auto-save) ---
             loadDraftProject: function() { 
                 onSnapshot(doc(db, 'artifacts', appId, 'users', this.user.uid, 'workspace', 'draft'), (s) => { 
@@ -1191,6 +1243,7 @@
                         this.currentProject.fuelCalc = data.fuelCalc || this.currentProject.fuelCalc || { km: 0, trips: 1, efficiency: 10, price: 2239 };
                         this.currentProject.wages = data.wages || this.currentProject.wages || [];
                         this.currentProject.monthlyIndex = data.monthlyIndex || this.currentProject.monthlyIndex || { label: 'Mayo 2026', mat: 0, mo: 0 };
+                        this.normalizeQuebrachoUnits();
                         if(document.getElementById('project-items-table')) this.renderProjectTable(); 
                     } 
                 }); 
@@ -1326,6 +1379,7 @@
                 const b = this.savedBudgets.find(x => x.id === projId);
                 if(!b) return;
                 this.currentProject.items = b.items || [];
+                this.normalizeQuebrachoUnits();
                 this.currentProject.loadedId = b.id;
                 this.currentProject.title = b.title;
                 this.currentProject.expenses = b.expenses || [];
@@ -1425,7 +1479,8 @@
                         <th class="p-1.5 text-center bg-[#f8fafc] font-semibold text-[10px] w-28 col-mo ${hmo?'hidden':''}">SUBTOTAL</th>
                     </tr>
                 `;
-                const g = {}; this.currentProject.items.forEach(i => { const dbI = this.database.find(x => x.id === i.dbId); if(dbI) { i.matPrice = dbI.matPrice; i.laborPrice = dbI.laborPrice; } if(!g[i.category]) g[i.category] = []; g[i.category].push(i); });
+                this.normalizeQuebrachoUnits();
+                const g = {}; this.currentProject.items.forEach(i => { const dbI = this.database.find(x => x.id === i.dbId); if(dbI) { i.matPrice = dbI.matPrice; i.laborPrice = dbI.laborPrice; i.unit = dbI.unit; i.category = dbI.category; i.name = dbI.name; } if(!g[i.category]) g[i.category] = []; g[i.category].push(i); });
                 tb.innerHTML = ''; let tm=0, to=0;
                 
                 if(this.currentProject.items.length === 0) { tb.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-slate-400 font-medium">Hoja en blanco. Selecciona ítems del catálogo para comenzar.</td></tr>`; }
@@ -1789,7 +1844,7 @@
                 if(type === 'gastos') {
                     rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Ganancia estimada: ${this.formatCurrency(b.direct-exp)}</h2>`;
                 } else {
-                    rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${i.name}</td><td>${i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
+                    rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${dbI.name || i.name}</td><td>${dbI.unit || i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
                 const w = window.open('', '_blank');
                 w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px;font-size:16px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
