@@ -363,6 +363,7 @@
                     <button onclick="app.navigate('calculadoras')" id="nav-calculadoras" title="Calculá costos reales de obra como combustible y jornales." class="hover:text-emerald-700 transition-colors">Calculadoras</button>
                     <button onclick="app.navigate('gastos')" id="nav-gastos" title="Cargá gastos adicionales recuperables de la obra." class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
                     <button onclick="app.navigate('indices')" id="nav-indices" title="Consultá variaciones mensuales y aplicá ajustes a tus costos." class="hover:text-emerald-700 transition-colors">Índices y Rentabilidad</button>
+                    <button onclick="app.navigate('herramientas')" id="nav-herramientas" title="Herramientas técnicas: rendimiento de mano de obra y conversores de unidades." class="hover:text-emerald-700 transition-colors">Herramientas</button>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
@@ -668,6 +669,130 @@
     </template>
 
     <!-- Plantillas completas de la app -->
+    
+    <template id="view-herramientas">
+        <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
+            <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Herramientas</h2>
+                    <p class="text-sm text-slate-500 mt-1">Calculadoras técnicas de apoyo. No modifican automáticamente el cómputo ni Mis Costos.</p>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                <!-- Calculadora de rendimiento de mano de obra -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-emerald-50">
+                        <h3 class="font-black text-emerald-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-person-digging text-emerald-600"></i> Calculadora de rendimiento de mano de obra
+                        </h3>
+                        <p class="text-xs text-emerald-700 mt-1">Calcula el costo sugerido por unidad para luego cargarlo manualmente en Mis Costos.</p>
+                    </div>
+
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jornal diario por operario</label>
+                            <input id="tool-labor-jornal" type="number" value="70000" oninput="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Horas de jornada</label>
+                            <input id="tool-labor-hours" type="number" value="8" oninput="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cantidad de operarios</label>
+                            <input id="tool-labor-workers" type="number" value="1" oninput="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Unidad de la tarea</label>
+                            <select id="tool-labor-unit" onchange="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-bold outline-none focus:border-emerald-500">
+                                <option value="m²">m²</option>
+                                <option value="m³">m³</option>
+                                <option value="ML">ML</option>
+                                <option value="unidad">unidad</option>
+                                <option value="global">global</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tiempo por unidad (minutos)</label>
+                            <input id="tool-labor-min-per-unit" type="number" value="15" oninput="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cantidad a ejecutar</label>
+                            <input id="tool-labor-qty" type="number" value="1" oninput="app.calcToolLabor()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-white border border-slate-200 rounded-xl p-3">
+                            <div class="text-[10px] uppercase font-bold text-slate-400">Costo por minuto cuadrilla</div>
+                            <div id="tool-labor-cost-min" class="font-black text-slate-800 mt-1">$0</div>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-3">
+                            <div class="text-[10px] uppercase font-bold text-slate-400">Costo total tarea</div>
+                            <div id="tool-labor-total" class="font-black text-slate-800 mt-1">$0</div>
+                        </div>
+                        <div class="bg-emerald-800 text-white rounded-xl p-3">
+                            <div class="text-[10px] uppercase font-bold text-emerald-100">Valor sugerido para Mis Costos</div>
+                            <div id="tool-labor-unit-cost" class="font-black text-white mt-1 text-xl">$0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversores de unidades -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-blue-50">
+                        <h3 class="font-black text-blue-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-ruler-combined text-blue-600"></i> Conversores de unidades
+                        </h3>
+                        <p class="text-xs text-blue-700 mt-1">Superficies, volúmenes y cálculo rápido para áridos, canteros, pisos, drenajes y zanjas.</p>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <div class="border border-slate-200 rounded-2xl p-4">
+                            <h4 class="font-black text-slate-700 text-xs uppercase mb-3">Superficie rectangular</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="tool-area-largo" type="number" placeholder="Largo m" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                                <input id="tool-area-ancho" type="number" placeholder="Ancho m" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mt-3 text-sm font-bold text-blue-800">Resultado: <span id="tool-area-result">0 m²</span></div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl p-4">
+                            <h4 class="font-black text-slate-700 text-xs uppercase mb-3">m² a m³ por profundidad</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="tool-m2m3-area" type="number" placeholder="Superficie m²" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                                <input id="tool-m2m3-depth" type="number" placeholder="Espesor cm" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mt-3 text-sm font-bold text-blue-800">Resultado: <span id="tool-m2m3-result">0 m³</span></div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl p-4">
+                            <h4 class="font-black text-slate-700 text-xs uppercase mb-3">m³ a m² por profundidad</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input id="tool-m3m2-volume" type="number" placeholder="Volumen m³" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                                <input id="tool-m3m2-depth" type="number" placeholder="Espesor cm" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mt-3 text-sm font-bold text-blue-800">Resultado: <span id="tool-m3m2-result">0 m²</span></div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl p-4">
+                            <h4 class="font-black text-slate-700 text-xs uppercase mb-3">ML a m³</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <input id="tool-mlm3-ml" type="number" placeholder="ML" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                                <input id="tool-mlm3-width" type="number" placeholder="Ancho cm" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                                <input id="tool-mlm3-depth" type="number" placeholder="Prof. cm" oninput="app.calcToolUnits()" class="border border-slate-300 rounded-xl px-3 py-2 text-right font-bold outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mt-3 text-sm font-bold text-blue-800">Resultado: <span id="tool-mlm3-result">0 m³</span></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </template>
+
+
     <template id="view-database">
         <div class="p-4 md:p-6 w-full h-full fade-in max-w-5xl mx-auto">
             <div class="bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col h-full overflow-hidden">
@@ -994,7 +1119,7 @@
             navigate: function(viewId) {
                 const content = document.getElementById('main-content'); const template = document.getElementById(`view-${viewId}`); if (!template) return;
                 content.innerHTML = template.innerHTML;
-                ['computo','database','calculadoras','gastos','indices'].forEach(id => {
+                ['computo','database','calculadoras','gastos','indices','herramientas'].forEach(id => {
                     const btn = document.getElementById(`nav-${id}`);
                     if(btn) btn.className = id === viewId ? "text-emerald-800 font-black transition-colors border-b-[3px] border-emerald-600 pb-1" : "text-emerald-900/60 hover:text-emerald-700 font-bold transition-colors pb-1";
                 });
@@ -1013,8 +1138,71 @@
                 if (viewId === 'database') { this.renderDatabaseTable(''); }
                 if (viewId === 'indices') { const mi=this.currentProject.monthlyIndex||{label:'Mayo 2026',mat:0,mo:0}; const l=document.getElementById('index-label'); if(l) l.value=mi.label||'Mayo 2026'; const im=document.getElementById('index-monthly-mat'); if(im) im.value=mi.mat||0; const io=document.getElementById('index-monthly-mo'); if(io) io.value=mi.mo||0; const rp=this.currentProject.projectProfit||{mat:0,mo:0}; const rpm=document.getElementById('input-profit-mat'); if(rpm) rpm.value=rp.mat||0; const rpo=document.getElementById('input-profit-mo'); if(rpo) rpo.value=rp.mo||0; this.renderProfitActiveInfo(); }
                 if (viewId === 'calculadoras') { this.renderCalculators(); }
+                if (viewId === 'herramientas') { this.renderTools(); }
                 if (viewId === 'gastos') { this.renderExpenses(); }
                 if (viewId === 'perfil') { this.populateProfileForm(); this.setProfileTab('usuario'); }
+            },
+
+
+            // --- HERRAMIENTAS ---
+            renderTools: function() {
+                setTimeout(() => {
+                    this.calcToolLabor();
+                    this.calcToolUnits();
+                }, 0);
+            },
+
+            calcToolLabor: function() {
+                const val = id => Number(document.getElementById(id)?.value) || 0;
+                const jornal = val('tool-labor-jornal');
+                const horas = val('tool-labor-hours');
+                const operarios = val('tool-labor-workers') || 1;
+                const minutosUnidad = val('tool-labor-min-per-unit');
+                const cantidad = val('tool-labor-qty') || 1;
+                const unidad = document.getElementById('tool-labor-unit')?.value || 'm²';
+
+                const costoMinutoCuadrilla = horas > 0 ? (jornal * operarios) / (horas * 60) : 0;
+                const minutosTotales = minutosUnidad * cantidad;
+                const costoTotal = costoMinutoCuadrilla * minutosTotales;
+                const costoUnidad = cantidad > 0 ? costoTotal / cantidad : 0;
+
+                const minEl = document.getElementById('tool-labor-cost-min');
+                const totalEl = document.getElementById('tool-labor-total');
+                const unitEl = document.getElementById('tool-labor-unit-cost');
+
+                if(minEl) minEl.textContent = this.formatCurrency(costoMinutoCuadrilla);
+                if(totalEl) totalEl.textContent = this.formatCurrency(costoTotal);
+                if(unitEl) unitEl.textContent = `${this.formatCurrency(costoUnidad)} / ${unidad}`;
+            },
+
+            calcToolUnits: function() {
+                const val = id => Number(document.getElementById(id)?.value) || 0;
+                const fmt = n => (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                const largo = val('tool-area-largo');
+                const ancho = val('tool-area-ancho');
+                const areaRect = largo * ancho;
+                const areaEl = document.getElementById('tool-area-result');
+                if(areaEl) areaEl.textContent = `${fmt(areaRect)} m²`;
+
+                const area = val('tool-m2m3-area');
+                const depthCm = val('tool-m2m3-depth');
+                const vol = area * (depthCm / 100);
+                const m2m3El = document.getElementById('tool-m2m3-result');
+                if(m2m3El) m2m3El.textContent = `${fmt(vol)} m³`;
+
+                const volume = val('tool-m3m2-volume');
+                const depth2Cm = val('tool-m3m2-depth');
+                const areaFromVolume = depth2Cm > 0 ? volume / (depth2Cm / 100) : 0;
+                const m3m2El = document.getElementById('tool-m3m2-result');
+                if(m3m2El) m3m2El.textContent = `${fmt(areaFromVolume)} m²`;
+
+                const ml = val('tool-mlm3-ml');
+                const widthCm = val('tool-mlm3-width');
+                const depth3Cm = val('tool-mlm3-depth');
+                const volMl = ml * (widthCm / 100) * (depth3Cm / 100);
+                const mlm3El = document.getElementById('tool-mlm3-result');
+                if(mlm3El) mlm3El.textContent = `${fmt(volMl)} m³`;
             },
 
             // --- PERFIL ---
