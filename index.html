@@ -1058,6 +1058,15 @@
             { id: 'aridos-piedra-binder', category: '13 - Áridos', name: 'Acarreo y colocación de Piedra Binder', unit: 'M³', matPrice: 151000, laborPrice: 0 },
             { id: 'aridos-arena', category: '13 - Áridos', name: 'Acarreo y desparramo de Arena', unit: 'M³', matPrice: 40000, laborPrice: 0 },
 
+            { id: 'sol-cantero-terminado', category: '👑 Soluciones Paisajísticas', name: 'Cantero terminado (incluye desmonte 20 cm, compost y chips)', unit: 'M2', matPrice: 25000, laborPrice: 12000 },
+            { id: 'sol-cesped-premium', category: '👑 Soluciones Paisajísticas', name: 'Implantación de césped premium (base completa + colocación)', unit: 'M2', matPrice: 18000, laborPrice: 9000 },
+            { id: 'sol-camino-binder', category: '👑 Soluciones Paisajísticas', name: 'Camino paisajístico Binder (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 9000, laborPrice: 7000 },
+            { id: 'sol-camino-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Camino paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
+            { id: 'sol-fogonero-binder', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Binder (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 9000, laborPrice: 7000 },
+            { id: 'sol-fogonero-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
+            { id: 'keyrock-pisos-drenantes-link', category: '🌿 Pisos Drenantes KeyRock', name: 'Pisos drenantes KeyRock - solicitar presupuesto especializado', unit: 'INFO', matPrice: 0, laborPrice: 0, url: 'https://www.keyrockpaisajismo.com.ar' },
+
+
         ];
 
         window.app = {
@@ -1379,7 +1388,8 @@
                                 name: base?.name ?? i.name,
                                 unit: base?.unit ?? i.unit,
                                 matPrice: o?.matPrice ?? i.matPrice ?? base?.matPrice ?? 0,
-                                laborPrice: o?.laborPrice ?? i.laborPrice ?? base?.laborPrice ?? 0
+                                laborPrice: o?.laborPrice ?? i.laborPrice ?? base?.laborPrice ?? 0,
+                                url: base?.url ?? i.url ?? null
                             };
                         }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
                         if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
@@ -1657,31 +1667,49 @@
             toggleCategory: function(c) { this.expandedCategories[c] = !this.expandedCategories[c]; this.renderCatalog(document.getElementById('item-search').value); },
             filterCatalog: function(v) { this.renderCatalog(v); }, filterDatabase: function(v) { this.renderDatabaseTable(v); },
             toggleItemInProject: function(dbId) {
+                const dbItem = this.database.find(x => x.id === dbId);
+                if(dbItem && dbItem.url) {
+                    window.open(dbItem.url, '_blank');
+                    return;
+                }
                 const i = this.currentProject.items.findIndex(x => x.dbId === dbId);
-                if (i > -1) this.currentProject.items.splice(i, 1); else this.currentProject.items.push({...this.database.find(x => x.id === dbId), uid: 'it_'+Math.random(), dbId: dbId, qty: 1});
+                if (i > -1) this.currentProject.items.splice(i, 1); else this.currentProject.items.push({...dbItem, uid: 'it_'+Math.random(), dbId: dbId, qty: 1});
                 this.autoSaveDraft(); this.renderProjectTable(); this.renderCatalog(document.getElementById('item-search').value);
             },
             removeItemFromProject: function(u) { this.currentProject.items = this.currentProject.items.filter(i => i.uid !== u); this.autoSaveDraft(); this.renderProjectTable(); this.renderCatalog(document.getElementById('item-search')?.value || ''); },
             updateItemQty: function(u, v) { const i = this.currentProject.items.find(x => x.uid === u); if(i) { i.qty = parseFloat(v)||0; this.autoSaveDraft(); this.renderProjectTable(); } },
             
             renderCatalog: function(fVal) {
-                const list = document.getElementById('catalog-list'); if(!list) return; list.innerHTML = ''; const f = fVal.toLowerCase(); const cats = [...new Set(this.database.map(i => i.category))].sort();
+                const list = document.getElementById('catalog-list'); if(!list) return; list.innerHTML = ''; const f = (fVal || '').toLowerCase(); const cats = [...new Set(this.database.map(i => i.category))].sort((a,b) => {
+                    const priority = c => c.includes('Soluciones Paisajísticas') ? 0 : (c.includes('Pisos Drenantes KeyRock') ? 1 : 2);
+                    const pa = priority(a), pb = priority(b);
+                    if(pa !== pb) return pa - pb;
+                    return a.localeCompare(b, 'es', {sensitivity:'base'});
+                });
                 cats.forEach(c => {
-                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const exp = f ? true : this.expandedCategories[c];
+                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const defaultOpen = c.includes('Soluciones Paisajísticas') || c.includes('Pisos Drenantes KeyRock');
+                    const exp = f ? true : (this.expandedCategories[c] ?? defaultOpen);
                     const categoryHasSelected = this.currentProject.items.some(x => {
                         const dbItem = this.database.find(i => i.id === x.dbId);
                         return dbItem && dbItem.category === c;
                     });
-                    const catButtonClass = categoryHasSelected
+                    let catButtonClass = categoryHasSelected
                         ? "w-full flex justify-between p-3.5 bg-emerald-100 hover:bg-emerald-100 text-xs font-black text-emerald-900 transition-colors border-l-4 border-emerald-500"
                         : "w-full flex justify-between p-3.5 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors";
+                    if(c.includes('Soluciones Paisajísticas')) {
+                        catButtonClass = "w-full flex justify-between p-3.5 bg-amber-50 hover:bg-amber-100 text-xs font-black text-amber-800 transition-colors border-l-4 border-amber-400";
+                    }
+                    if(c.includes('Pisos Drenantes KeyRock')) {
+                        catButtonClass = "w-full flex justify-between p-3.5 bg-emerald-50 hover:bg-emerald-100 text-xs font-black text-emerald-800 transition-colors border-l-4 border-emerald-500";
+                    }
                     const div = document.createElement('div'); div.className = "border-b border-slate-200";
                     div.innerHTML = `<button onclick="app.toggleCategory('${c}')" class="${catButtonClass}"><span class="truncate">${c}</span><i class="fa-solid ${exp ? 'fa-chevron-down text-emerald-500' : 'fa-chevron-right text-slate-400'} transition-transform"></i></button>`;
                     if(exp) {
                         let h = `<div class="bg-slate-50 divide-y divide-slate-100/50 pb-2">`;
                         items.forEach(i => {
                             const sel = this.currentProject.items.some(x => x.dbId === i.id);
-                            h += `<div onclick="app.toggleItemInProject('${i.id}')" class="px-4 py-2.5 flex items-start gap-3 hover:bg-emerald-50 cursor-pointer text-[11px] font-medium transition-colors ${sel?'bg-emerald-50/70 text-emerald-900 border-l-2 border-emerald-200':'text-slate-600'}"><i class="fa-solid ${sel ? 'fa-square-check text-emerald-600' : 'fa-square text-slate-300'} mt-0.5 text-sm"></i><span class="flex-1 leading-tight">${i.name}</span></div>`;
+                            const isLink = !!i.url;
+                            h += `<div onclick="app.toggleItemInProject('${i.id}')" class="px-4 py-2.5 flex items-start gap-3 hover:bg-emerald-50 cursor-pointer text-[11px] font-medium transition-colors ${sel?'bg-emerald-50/70 text-emerald-900 border-l-2 border-emerald-200':'text-slate-600'}"><i class="fa-solid ${isLink ? 'fa-arrow-up-right-from-square text-emerald-600' : (sel ? 'fa-square-check text-emerald-600' : 'fa-square text-slate-300')} mt-0.5 text-sm"></i><span class="flex-1 leading-tight">${i.name}${isLink ? '<br><span class="text-[10px] text-emerald-700 font-bold">Abrir sitio externo</span>' : ''}</span></div>`;
                         });
                         h += `</div>`; div.innerHTML += h;
                     }
