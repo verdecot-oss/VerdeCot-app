@@ -655,7 +655,7 @@
                                 <tbody id="expenses-table" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
-                        <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Rubros sugeridos: combustible, peajes, insumos menores, fletes, alquiler/compra de herramientas, viáticos, estacionamiento, disposición de residuos, protección personal, mantenimiento de máquinas, imprevistos y administración.</div>
+                        <div class="p-4 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">Combustible y jornales reales se muestran como gastos automáticos no editables desde Calculadoras. Rubros sugeridos editables: peajes, insumos menores, fletes, alquiler/compra de herramientas, viáticos, estacionamiento, disposición de residuos, protección personal, mantenimiento de máquinas, imprevistos y administración.</div>
                     </div>
                 </div>
                 <div class="space-y-6">
@@ -1064,7 +1064,7 @@
             { id: 'sol-camino-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Camino paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
             { id: 'sol-fogonero-binder', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Binder (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 9000, laborPrice: 7000 },
             { id: 'sol-fogonero-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
-            { id: 'keyrock-pisos-drenantes-link', category: '🌿 Pisos Drenantes KeyRock', name: 'Pisos drenantes KeyRock - solicitar presupuesto especializado', unit: 'INFO', matPrice: 0, laborPrice: 0, url: 'https://www.keyrockpaisajismo.com.ar' },
+            { id: 'keyrock-pisos-drenantes-link', category: '🌿 Pisos Drenantes KeyRock', name: 'Conocer KeyRock Paisajismo', unit: 'INFO', matPrice: 0, laborPrice: 0, url: 'https://www.keyrockpaisajismo.com.ar' },
 
 
         ];
@@ -1687,8 +1687,7 @@
                     return a.localeCompare(b, 'es', {sensitivity:'base'});
                 });
                 cats.forEach(c => {
-                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const defaultOpen = c.includes('Soluciones Paisajísticas') || c.includes('Pisos Drenantes KeyRock');
-                    const exp = f ? true : (this.expandedCategories[c] ?? defaultOpen);
+                    const items = this.database.filter(i => i.category === c && i.name.toLowerCase().includes(f)).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'})); if(f && !items.length) return; const exp = f ? true : (this.expandedCategories[c] ?? false);
                     const categoryHasSelected = this.currentProject.items.some(x => {
                         const dbItem = this.database.find(i => i.id === x.dbId);
                         return dbItem && dbItem.category === c;
@@ -1944,43 +1943,41 @@
                     fuel = this.currentProject.expenses.find(e => String(e.category || '').trim().toLowerCase().startsWith('combustible'));
                 }
 
-                if(r.total <= 0) {
-                    if(fuel) {
-                        fuel.id = 'fuel_auto';
-                        fuel.category = 'Combustible calculado';
-                        fuel.detail = 'Sin cálculo de combustible cargado';
-                        fuel.qty = 1;
-                        fuel.unitCost = 0;
-                        fuel.locked = true;
-                        fuel.fuelAuto = true;
-                    }
-                    return fuel || null;
-                }
-
-                if(!fuel && !createIfMissing) return null;
-                if(!fuel) {
-                    fuel = { id:'fuel_auto', category:'Combustible calculado', detail:'', qty:1, unitCost:0, locked:true, fuelAuto:true };
+                // Igual que Jornales reales: mantiene una línea fija aunque el valor sea $0.
+                // Así el usuario ve siempre que el combustible se calcula desde Calculadoras.
+                if(!fuel && createIfMissing) {
+                    fuel = { id:'fuel_auto', category:'Combustible calculado', detail:'Sin cálculo de combustible cargado', qty:1, unitCost:0, locked:true, fuelAuto:true };
                     this.currentProject.expenses.unshift(fuel);
                 }
+                if(!fuel && !createIfMissing) return null;
 
-                fuel.id = 'fuel_auto';
-                fuel.category = 'Combustible calculado';
-                fuel.detail = `${Math.round(r.totalKm)} km / ${r.liters.toFixed(1)} L / ${this.formatCurrency(r.price)} por litro`;
-                fuel.qty = 1;
-                fuel.unitCost = Math.round(r.total);
-                fuel.locked = true;
-                fuel.fuelAuto = true;
+                if(fuel) {
+                    fuel.id = 'fuel_auto';
+                    fuel.category = 'Combustible calculado';
+                    fuel.detail = r.total > 0
+                        ? `${Math.round(r.totalKm)} km / ${r.liters.toFixed(1)} L / ${this.formatCurrency(r.price)} por litro`
+                        : 'Sin cálculo de combustible cargado';
+                    fuel.qty = 1;
+                    fuel.unitCost = Math.round(r.total || 0);
+                    fuel.locked = true;
+                    fuel.fuelAuto = true;
+                }
 
                 // Evita duplicados viejos de combustible si quedaron guardados de una versión anterior.
                 let found = false;
                 this.currentProject.expenses = this.currentProject.expenses.filter(e => {
                     const isFuel = e.id === 'fuel_auto' || e.fuelAuto === true || String(e.category || '').trim().toLowerCase().startsWith('combustible');
                     if(!isFuel) return true;
-                    if(!found) { found = true; return true; }
+                    if(!found && fuel) { found = true; return true; }
                     return false;
                 });
-                if(!this.currentProject.expenses.includes(fuel)) this.currentProject.expenses.unshift(fuel);
-                return fuel;
+
+                // Lo deja visible al inicio de Mis Gastos, como gasto automático fijo.
+                if(fuel) {
+                    this.currentProject.expenses = this.currentProject.expenses.filter(e => e !== fuel);
+                    this.currentProject.expenses.unshift(fuel);
+                }
+                return fuel || null;
             },
             addFuelToExpenses: function() {
                 this.updateFuelCalc();
