@@ -1031,6 +1031,54 @@
         const firebaseConfig = { apiKey: "AIzaSyAtsboZ8Fnn8PEg8Z99iQUOJhJy4DRyn5g", authDomain: "verdecot-1db0d.firebaseapp.com", projectId: "verdecot-1db0d", storageBucket: "verdecot-1db0d.firebasestorage.app", messagingSenderId: "260889721477", appId: "1:260889721477:web:0139c4c1ac5bd5391147ec" };
         const appInstance = initializeApp(firebaseConfig); const auth = getAuth(appInstance); const db = getFirestore(appInstance); const appId = 'verdecot-app';
 
+        // Miembros permanentes VerdeCot.
+        // Importante: no son contraseñas ni claves de acceso.
+        // Solo asignan rol cuando el usuario ya inició sesión con Firebase Authentication.
+        const PERMANENT_MEMBERS = {
+            creators: [
+                'verdecot@gmail.com',
+                'edumaccormack@gmail.com'
+            ],
+            vipNames: [
+                'dario vidal lugo'
+            ]
+        };
+
+        const normalizeText = (value) => (value || '')
+            .toString()
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
+        const normalizeEmail = (value) => normalizeText(value);
+
+        const getPermanentMembership = (user, profile = {}) => {
+            const email = normalizeEmail(user?.email || profile?.accessEmail || '');
+            const profileName = normalizeText(profile?.name || '');
+            if (PERMANENT_MEMBERS.creators.includes(email)) {
+                return {
+                    role: 'creator',
+                    membershipStatus: 'permanent',
+                    subscriptionStatus: 'active',
+                    subscriptionType: 'lifetime',
+                    subscriptionExpiresAt: null,
+                    membershipLabel: 'Membresía permanente · Creador'
+                };
+            }
+            if (profile?.role === 'vip' || profile?.membershipStatus === 'permanent' || PERMANENT_MEMBERS.vipNames.includes(profileName)) {
+                return {
+                    role: 'vip',
+                    membershipStatus: 'permanent',
+                    subscriptionStatus: 'active',
+                    subscriptionType: 'lifetime',
+                    subscriptionExpiresAt: null,
+                    membershipLabel: 'Membresía permanente · VIP'
+                };
+            }
+            return null;
+        };
+
         const INITIAL_CATALOG = [
             { id: '101', category: '01 - Trabajos Preliminares', name: 'Limpieza y nivelación manual de terreno', unit: 'M2', matPrice: 0, laborPrice: 1800 },
             { id: '102', category: '01 - Trabajos Preliminares', name: 'Limpieza de terreno con minicargadora (Bobcat)', unit: 'GL', matPrice: 0, laborPrice: 185000 },
@@ -1071,10 +1119,15 @@
         ];
 
         window.app = {
-            user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar' },
+            user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar', membershipStatus: 'standard', subscriptionStatus: 'inactive', subscriptionType: 'standard', subscriptionExpiresAt: null, membershipLabel: '' },
             database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: {}, viewMode: 'TOTAL', isLoginMode: true,
 
-            checkSubscriptionStatus: function(u) { return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' }; }, // Forzamos Pro para esta etapa
+            checkSubscriptionStatus: function(u) {
+                const permanent = getPermanentMembership(u || this.user, this.userProfile);
+                if (permanent?.role === 'creator') return { isTrialExpired: false, daysLeft: '∞', isAdmin: true, isVip: true, type: 'Creador Permanente' };
+                if (permanent?.role === 'vip') return { isTrialExpired: false, daysLeft: '∞', isAdmin: false, isVip: true, type: 'VIP Permanente' };
+                return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' };
+            }, // Seguridad: reconoce membresías permanentes sin reactivar claves visibles
 
             handleUserAuthChange: function(user) {
                 const authModal = document.getElementById('auth-modal');
@@ -1084,15 +1137,16 @@
                 const userDisplay = document.getElementById('user-display');
                 if(userDisplay) userDisplay.textContent = displayName;
 
-                let roleTxt = 'Usuario Estándar';
+                const membership = this.checkSubscriptionStatus(user);
+                let roleTxt = this.userProfile.membershipLabel || 'Usuario Estándar';
                 let badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Estándar';
                 if(this.userProfile.role === 'creator') {
-                    roleTxt = '🟢 ADMINISTRADOR CREADOR';
-                    badgeHtml = '<i class="fa-solid fa-crown text-amber-500"></i> Creador';
+                    roleTxt = this.userProfile.membershipLabel || '🟢 ADMINISTRADOR CREADOR';
+                    badgeHtml = '<i class="fa-solid fa-crown text-amber-500"></i> Creador Permanente';
                 }
                 if(this.userProfile.role === 'vip') {
-                    roleTxt = '⭐ USUARIO VIP PRO';
-                    badgeHtml = '<i class="fa-solid fa-star text-amber-500"></i> VIP Pro';
+                    roleTxt = this.userProfile.membershipLabel || '⭐ USUARIO VIP PRO';
+                    badgeHtml = '<i class="fa-solid fa-star text-amber-500"></i> VIP Permanente';
                 }
                 const roleDisplay = document.getElementById('user-role-display');
                 if(roleDisplay) roleDisplay.textContent = roleTxt;
@@ -1258,7 +1312,21 @@
                     }
                 });
             },
-            loadProfileData: async function() { if(!this.user) return; try { const docSnap = await getDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile')); if (docSnap.exists()) { this.userProfile = { ...this.userProfile, ...docSnap.data() }; } } catch(e) {} },
+            loadProfileData: async function() {
+                if(!this.user) return;
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile');
+                    const docSnap = await getDoc(profileRef);
+                    if (docSnap.exists()) {
+                        this.userProfile = { ...this.userProfile, ...docSnap.data() };
+                    }
+                    const permanent = getPermanentMembership(this.user, this.userProfile);
+                    if (permanent) {
+                        this.userProfile = { ...this.userProfile, ...permanent };
+                        await setDoc(profileRef, permanent, { merge: true });
+                    }
+                } catch(e) {}
+            },
             populateProfileForm: function() {
                 if(!this.user) return;
                 ['name','phone','companyName','companySubtitle','companyContact'].forEach(f => {
@@ -1325,7 +1393,16 @@
                     companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim(),
                     companyLogo: this.userProfile.companyLogo || ''
                 };
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile');
+                    let profileUpdate = { ...u };
+                    const permanent = getPermanentMembership(this.user, { ...this.userProfile, ...u });
+                    if (permanent) profileUpdate = { ...profileUpdate, ...permanent };
+                    await setDoc(profileRef, profileUpdate, { merge: true });
+                    this.userProfile = { ...this.userProfile, ...profileUpdate };
+                    this.handleUserAuthChange(this.user);
+                    this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.');
+                } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
             },
 
             // --- DATABASE & INDICES ---
