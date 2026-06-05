@@ -324,10 +324,10 @@
                     <div class="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-2 h-full bg-slate-800"></div>
                         <h3 class="text-2xl font-black text-slate-800 mb-2">Soy Nuevo</h3>
-                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita.</p>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita. <span class="block mt-1 text-[11px] font-bold text-amber-600">Etapa privada: solo usuarios autorizados.</span></p>
                         <div class="space-y-5">
-                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="reg-email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
-                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="reg-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="reg-email" autocomplete="email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="reg-password" autocomplete="new-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
                             <button id="btn-register" class="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg mt-4 transition-all">Crear Mi Cuenta</button>
                         </div>
                     </div>
@@ -338,8 +338,8 @@
                         <h3 class="text-2xl font-black text-emerald-700 mb-2">Ya tengo cuenta</h3>
                         <p class="text-slate-500 mb-8 text-sm leading-relaxed">Inicia sesión con tu correo y contraseña.</p>
                         <div class="space-y-5">
-                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="login-email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
-                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="login-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="login-email" autocomplete="username" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
+                            <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="login-password" autocomplete="current-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-emerald-500"></div>
                             <button id="btn-login" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(16,185,129,0.3)] mt-4 transition-all">
                                 Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>
                             </button>
@@ -1031,32 +1031,35 @@
         const firebaseConfig = { apiKey: "AIzaSyAtsboZ8Fnn8PEg8Z99iQUOJhJy4DRyn5g", authDomain: "verdecot-1db0d.firebaseapp.com", projectId: "verdecot-1db0d", storageBucket: "verdecot-1db0d.firebasestorage.app", messagingSenderId: "260889721477", appId: "1:260889721477:web:0139c4c1ac5bd5391147ec" };
         const appInstance = initializeApp(firebaseConfig); const auth = getAuth(appInstance); const db = getFirestore(appInstance); const appId = 'verdecot-app';
 
-        // Miembros permanentes VerdeCot.
-        // Importante: no son contraseñas ni claves de acceso.
-        // Solo asignan rol cuando el usuario ya inició sesión con Firebase Authentication.
-        const PERMANENT_MEMBERS = {
-            creators: [
-                'verdecot@gmail.com',
-                'edumaccormack@gmail.com'
-            ],
-            vipNames: [
-                'dario vidal lugo'
-            ]
+        // Seguridad V17: etapa privada con lista cerrada de emails autorizados.
+        const AUTHORIZED_EMAILS = [
+            'edumaccormack@gmail.com',
+            'verdecot@gmail.com',
+            'lugodariovidal@gmail.com'
+        ];
+
+        const CREATOR_EMAILS = [
+            'edumaccormack@gmail.com',
+            'verdecot@gmail.com'
+        ];
+
+        const normalizeEmail = (value) => (value || '').toString().trim().toLowerCase();
+        const isAuthorizedEmail = (email) => AUTHORIZED_EMAILS.includes(normalizeEmail(email));
+
+        const showAccessDeniedMessage = () => {
+            const message = 'Usuario no autorizado. VerdeCot está en etapa privada.';
+            try {
+                if (window.app && typeof window.app.showToast === 'function') {
+                    window.app.showToast(message);
+                    return;
+                }
+            } catch(e) {}
+            alert(message);
         };
 
-        const normalizeText = (value) => (value || '')
-            .toString()
-            .trim()
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-
-        const normalizeEmail = (value) => normalizeText(value);
-
-        const getPermanentMembership = (user, profile = {}) => {
-            const email = normalizeEmail(user?.email || profile?.accessEmail || '');
-            const profileName = normalizeText(profile?.name || '');
-            if (PERMANENT_MEMBERS.creators.includes(email)) {
+        const getPermanentRoleByEmail = (email) => {
+            const normalized = normalizeEmail(email);
+            if (CREATOR_EMAILS.includes(normalized)) {
                 return {
                     role: 'creator',
                     membershipStatus: 'permanent',
@@ -1066,7 +1069,7 @@
                     membershipLabel: 'Membresía permanente · Creador'
                 };
             }
-            if (profile?.role === 'vip' || profile?.membershipStatus === 'permanent' || PERMANENT_MEMBERS.vipNames.includes(profileName)) {
+            if (normalized === 'lugodariovidal@gmail.com') {
                 return {
                     role: 'vip',
                     membershipStatus: 'permanent',
@@ -1123,13 +1126,19 @@
             database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: {}, viewMode: 'TOTAL', isLoginMode: true,
 
             checkSubscriptionStatus: function(u) {
-                const permanent = getPermanentMembership(u || this.user, this.userProfile);
-                if (permanent?.role === 'creator') return { isTrialExpired: false, daysLeft: '∞', isAdmin: true, isVip: true, type: 'Creador Permanente' };
-                if (permanent?.role === 'vip') return { isTrialExpired: false, daysLeft: '∞', isAdmin: false, isVip: true, type: 'VIP Permanente' };
-                return { isTrialExpired: false, daysLeft: 'VIP', isAdmin: true, isVip: true, type: 'Licencia Pro' };
-            }, // Seguridad: reconoce membresías permanentes sin reactivar claves visibles
+                const email = normalizeEmail((u || this.user || {}).email);
+                if (CREATOR_EMAILS.includes(email)) return { isTrialExpired: false, daysLeft: '∞', isAdmin: true, isVip: true, type: 'Creador Permanente' };
+                if (email === 'lugodariovidal@gmail.com') return { isTrialExpired: false, daysLeft: '∞', isAdmin: false, isVip: true, type: 'VIP Permanente' };
+                return { isTrialExpired: true, daysLeft: 0, isAdmin: false, isVip: false, type: 'No autorizado' };
+            },
 
-            handleUserAuthChange: function(user) {
+            handleUserAuthChange: async function(user) {
+                if (user && !isAuthorizedEmail(user.email)) {
+                    await signOut(auth);
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                    showAccessDeniedMessage();
+                    return;
+                }
                 const authModal = document.getElementById('auth-modal');
                 if(authModal) authModal.classList.add('hidden');
 
@@ -1137,16 +1146,15 @@
                 const userDisplay = document.getElementById('user-display');
                 if(userDisplay) userDisplay.textContent = displayName;
 
-                const membership = this.checkSubscriptionStatus(user);
-                let roleTxt = this.userProfile.membershipLabel || 'Usuario Estándar';
+                let roleTxt = 'Usuario Estándar';
                 let badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Estándar';
                 if(this.userProfile.role === 'creator') {
-                    roleTxt = this.userProfile.membershipLabel || '🟢 ADMINISTRADOR CREADOR';
-                    badgeHtml = '<i class="fa-solid fa-crown text-amber-500"></i> Creador Permanente';
+                    roleTxt = '🟢 ADMINISTRADOR CREADOR';
+                    badgeHtml = '<i class="fa-solid fa-crown text-amber-500"></i> Creador';
                 }
                 if(this.userProfile.role === 'vip') {
-                    roleTxt = this.userProfile.membershipLabel || '⭐ USUARIO VIP PRO';
-                    badgeHtml = '<i class="fa-solid fa-star text-amber-500"></i> VIP Permanente';
+                    roleTxt = '⭐ USUARIO VIP PRO';
+                    badgeHtml = '<i class="fa-solid fa-star text-amber-500"></i> VIP Pro';
                 }
                 const roleDisplay = document.getElementById('user-role-display');
                 if(roleDisplay) roleDisplay.textContent = roleTxt;
@@ -1164,7 +1172,8 @@
                     if (user) {
                         this.user = user;
                         await this.loadProfileData();
-                        this.handleUserAuthChange(user);
+                        await this.handleUserAuthChange(user);
+                        if (!this.user) return;
                         this.enterPortal();
                         window.scrollTo(0,0);
                     } else {
@@ -1175,7 +1184,14 @@
             },
 
             toggleUserMenu: function(e) { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('hidden'); },
-            enterPortal: function() { document.getElementById('auth-modal').className="hidden"; this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('computo'); },
+            enterPortal: function() {
+                if(!this.user || !isAuthorizedEmail(this.user.email)) {
+                    showAccessDeniedMessage();
+                    return;
+                }
+                document.getElementById('auth-modal').className="hidden";
+                this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('computo');
+            },
             formatCurrency: (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0),
             getMonthlyIndexLabel: function() { const mi=this.currentProject?.monthlyIndex || {mat:0, mo:0}; const mat=Number(mi.mat)||0, mo=Number(mi.mo)||0; return `MAT ${mat>=0?'+':''}${mat}% · M.O. ${mo>=0?'+':''}${mo}%`; },
             showToast: function(msg) { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = "bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-3 fade-in z-50"; t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3500); },
@@ -1188,6 +1204,7 @@
                         const e = document.getElementById('login-email').value.trim();
                         const p = document.getElementById('login-password').value;
                         if(!e || !p) { this.showToast('Completa correo y contraseña.'); return; }
+                        if(!isAuthorizedEmail(e)) { showAccessDeniedMessage(); return; }
 
                         try { await signInWithEmailAndPassword(auth, e, p); }
                         catch(err) { this.showToast('Correo o contraseña incorrectos.'); }
@@ -1199,10 +1216,12 @@
                         const e = document.getElementById('reg-email').value.trim();
                         const p = document.getElementById('reg-password').value;
                         if(!e || !p) { this.showToast('Completa correo y contraseña para crear la cuenta.'); return; }
+                        if(!isAuthorizedEmail(e)) { showAccessDeniedMessage(); return; }
                         if(p.length < 8) { this.showToast('La contraseña debe tener al menos 8 caracteres.'); return; }
                         try {
                             const userCredential = await createUserWithEmailAndPassword(auth, e, p);
-                            await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), { role: 'estandar' }, { merge: true });
+                            const permanentRole = getPermanentRoleByEmail(userCredential.user.email);
+                            await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), permanentRole || { role: 'estandar' }, { merge: true });
                             this.showToast('Cuenta creada con éxito.');
                         } catch(err) {
                             this.showToast('No se pudo crear la cuenta. El correo puede existir o ser inválido.');
@@ -1320,10 +1339,10 @@
                     if (docSnap.exists()) {
                         this.userProfile = { ...this.userProfile, ...docSnap.data() };
                     }
-                    const permanent = getPermanentMembership(this.user, this.userProfile);
-                    if (permanent) {
-                        this.userProfile = { ...this.userProfile, ...permanent };
-                        await setDoc(profileRef, permanent, { merge: true });
+                    const permanentRole = getPermanentRoleByEmail(this.user.email);
+                    if (permanentRole) {
+                        this.userProfile = { ...this.userProfile, ...permanentRole };
+                        await setDoc(profileRef, permanentRole, { merge: true });
                     }
                 } catch(e) {}
             },
@@ -1393,16 +1412,7 @@
                     companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim(),
                     companyLogo: this.userProfile.companyLogo || ''
                 };
-                try {
-                    const profileRef = doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile');
-                    let profileUpdate = { ...u };
-                    const permanent = getPermanentMembership(this.user, { ...this.userProfile, ...u });
-                    if (permanent) profileUpdate = { ...profileUpdate, ...permanent };
-                    await setDoc(profileRef, profileUpdate, { merge: true });
-                    this.userProfile = { ...this.userProfile, ...profileUpdate };
-                    this.handleUserAuthChange(this.user);
-                    this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.');
-                } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
             },
 
             // --- DATABASE & INDICES ---
