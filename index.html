@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VerdeCot | Presupuestos de Paisajismo</title>
-    <!-- Seguridad mínima: claves especiales removidas; demo anónima deshabilitada. Catálogo intacto. -->
+    <!-- V18.1 estable: catálogo local ordenado; Firestore no administra catálogo público. -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -405,7 +405,7 @@
             </div>
         </div>
         <div class="sismat-ticker bg-[#eaf4ef] border-t border-emerald-200 px-5 py-1.5 flex items-center justify-between text-[11px] font-bold text-emerald-800 overflow-x-auto whitespace-nowrap gap-6 shadow-inner">
-            <div class="flex items-center uppercase tracking-wider" id="current-date">ÚLTIMA ACTUALIZACIÓN: HOY</div>
+            <div class="flex items-center uppercase tracking-wider" id="current-date">ÚLTIMA ACTUALIZACIÓN: 6/6/2026 · CATÁLOGO LOCAL ORDENADO</div>
         </div>
     </header>
 
@@ -1082,43 +1082,105 @@
             return null;
         };
 
-        const INITIAL_CATALOG = [
-            { id: '101', category: '01 - Trabajos Preliminares', name: 'Limpieza y nivelación manual de terreno', unit: 'M2', matPrice: 0, laborPrice: 1800 },
-            { id: '102', category: '01 - Trabajos Preliminares', name: 'Limpieza de terreno con minicargadora (Bobcat)', unit: 'GL', matPrice: 0, laborPrice: 185000 },
-            { id: '103', category: '01 - Trabajos Preliminares', name: 'Obrador, depósito y sanitario provisorio', unit: 'GL', matPrice: 165000, laborPrice: 45000 },
-            { id: '204', category: '02 - Movimiento de Suelos', name: 'Provisión y desparramo de Tierra Fértil Negra', unit: 'M3', matPrice: 48000, laborPrice: 15000 },
-            { id: '301', category: '03 - Césped y Cubresuelos', name: 'Grama Bahiana en panes (Provisión y Colocación)', unit: 'M2', matPrice: 6500, laborPrice: 2200 },
-            { id: '401', category: '04 - Plantaciones (Árboles)', name: 'Árboles caducos 15L (Fresno, Jacarandá, Arce)', unit: 'U', matPrice: 22000, laborPrice: 6500 },
-            { id: '501', category: '05 - Plantaciones (Arbustos)', name: 'Arbustos 4L (Buxus, Eugenia, Oleotex)', unit: 'U', matPrice: 5500, laborPrice: 1800 },
-            { id: '603', category: '06 - Riego Automático', name: 'Toberas emergentes (Cuerpo + Boquilla)', unit: 'U', matPrice: 9500, laborPrice: 3500 },
-            { id: '701', category: '07 - Obra Civil en Jardín', name: 'Mampostería p/ canteros elevados (Ladrillo hueco)', unit: 'M2', matPrice: 14500, laborPrice: 24000 },
+                const INITIAL_CATALOG = [
+            { id: 'tp-demarcacion-canteros', category: '01 - Trabajos Preliminares', name: 'Demarcación de canteros y áreas verdes', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'tp-limpieza-minicargadora', category: '01 - Trabajos Preliminares', name: 'Limpieza de terreno con minicargadora (Bobcat)', unit: 'GL', matPrice: 0, laborPrice: 185000 },
+            { id: 'tp-limpieza-nivelacion-manual', category: '01 - Trabajos Preliminares', name: 'Limpieza y nivelación manual de terreno', unit: 'M2', matPrice: 0, laborPrice: 1800 },
+            { id: 'tp-obrador', category: '01 - Trabajos Preliminares', name: 'Obrador, depósito y sanitario provisorio', unit: 'GL', matPrice: 165000, laborPrice: 45000 },
+            { id: 'tp-proteccion-obra', category: '01 - Trabajos Preliminares', name: 'Protección de obra y sector de trabajo', unit: 'GL', matPrice: 0, laborPrice: 0 },
+            { id: 'tp-replanteo-proyecto', category: '01 - Trabajos Preliminares', name: 'Replanteo de proyecto de paisajismo', unit: 'GL', matPrice: 16500, laborPrice: 81250 },
+            { id: 'ms-carga-volquete-pala', category: '02 - Movimiento de Suelos', name: 'Carga de volquete a pala', unit: 'U', matPrice: 0, laborPrice: 43750 },
+            { id: 'ms-compactacion-manual', category: '02 - Movimiento de Suelos', name: 'Compactación manual de terreno', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'ms-compactacion-mecanica', category: '02 - Movimiento de Suelos', name: 'Compactación mecánica con placa/apisonadora', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'ms-destape-manual-20cm', category: '02 - Movimiento de Suelos', name: 'Destape del terreno manual (hasta 20 cm prof.)', unit: 'M2', matPrice: 0, laborPrice: 4000 },
+            { id: 'ms-excavacion-zanjas-canteros', category: '02 - Movimiento de Suelos', name: 'Excavación manual para zanjas/canteros', unit: 'M3', matPrice: 0, laborPrice: 52500 },
+            { id: 'ms-nivelacion-fina', category: '02 - Movimiento de Suelos', name: 'Nivelación fina previa a plantación o césped', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'ms-compost-organico', category: '02 - Movimiento de Suelos', name: 'Provisión y desparramo de compost orgánico', unit: 'M3', matPrice: 0, laborPrice: 0 },
+            { id: 'ms-tierra-abonada-especial', category: '02 - Movimiento de Suelos', name: 'Provisión y desparramo de Tierra Abonada Especial', unit: 'M3', matPrice: 74800, laborPrice: 18750 },
+            { id: 'ms-tierra-fertil-negra', category: '02 - Movimiento de Suelos', name: 'Provisión y desparramo de Tierra Fértil Negra', unit: 'M3', matPrice: 52800, laborPrice: 18750 },
+            { id: 'ms-relleno-tosca', category: '02 - Movimiento de Suelos', name: 'Relleno de suelos con Tosca (para nivelar)', unit: 'M3', matPrice: 38500, laborPrice: 15000 },
+            { id: 'ms-retiro-tierra-escombros-volquete', category: '02 - Movimiento de Suelos', name: 'Retiro de tierra/escombros con volquete', unit: 'U', matPrice: 71500, laborPrice: 0 },
+            { id: 'cesped-bermuda-panes', category: '03 - Césped y Cubresuelos', name: 'Bermuda en panes (Provisión y Colocación)', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'cesped-grama-bahiana-panes', category: '03 - Césped y Cubresuelos', name: 'Grama Bahiana en panes (Provisión y Colocación)', unit: 'M2', matPrice: 7150, laborPrice: 2750 },
+            { id: 'cesped-kikuyo-panes', category: '03 - Césped y Cubresuelos', name: 'Kikuyo en panes (Provisión y Colocación)', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'cesped-cubresuelos-plantacion', category: '03 - Césped y Cubresuelos', name: 'Plantación de cubresuelos', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'cesped-preparacion-cama', category: '03 - Césped y Cubresuelos', name: 'Preparación de cama para césped', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'cesped-siembra', category: '03 - Césped y Cubresuelos', name: 'Siembra de césped', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-hasta-3l', category: '04 - Plantaciones', name: 'Plantación hasta 3L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-3l-7l', category: '04 - Plantaciones', name: 'Plantación >3L hasta 7L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-7l-10l', category: '04 - Plantaciones', name: 'Plantación >7L hasta 10L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-10l-15l', category: '04 - Plantaciones', name: 'Plantación >10L hasta 15L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-15l-20l', category: '04 - Plantaciones', name: 'Plantación >15L hasta 20L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-20l-30l', category: '04 - Plantaciones', name: 'Plantación >20L hasta 30L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-mayor-30l', category: '04 - Plantaciones', name: 'Plantación mayor a 30L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-arbol-caduco-15l', category: '04 - Plantaciones', name: 'Árbol caduco 15L', unit: 'U', matPrice: 24200, laborPrice: 8125 },
+            { id: 'pl-arbol-ejemplar-formado-60l', category: '04 - Plantaciones', name: 'Árbol ejemplar formado (envase 60L+)', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-arbol-frutal-15l', category: '04 - Plantaciones', name: 'Árbol frutal 15L', unit: 'U', matPrice: 30800, laborPrice: 8125 },
+            { id: 'pl-arbol-perenne-15l', category: '04 - Plantaciones', name: 'Árbol perenne 15L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-palmera-pindo', category: '04 - Plantaciones', name: 'Palmera Pindó (tronco 1,5m a 2m libre)', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'pl-tutorado-arboles', category: '04 - Plantaciones', name: 'Tutorado de árboles (3 tutores + ataduras)', unit: 'U', matPrice: 4950, laborPrice: 1875 },
+            { id: 'tr-hasta-10l', category: '05 - Trasplantes', name: 'Trasplante hasta 10L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'tr-10l-20l', category: '05 - Trasplantes', name: 'Trasplante >10L hasta 20L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'tr-20l-30l', category: '05 - Trasplantes', name: 'Trasplante >20L hasta 30L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'tr-mayor-30l', category: '05 - Trasplantes', name: 'Trasplante mayor a 30L', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'tr-ejemplar-manual', category: '05 - Trasplantes', name: 'Trasplante de ejemplar manual', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'tr-ejemplar-maquinaria', category: '05 - Trasplantes', name: 'Trasplante de ejemplar con maquinaria', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-aspersor-rotor', category: '06 - Riego Automático', name: 'Aspersor rotor para césped', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-cano-polietileno-25', category: '06 - Riego Automático', name: 'Caño polietileno 25 mm instalado', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-electrovalvula', category: '06 - Riego Automático', name: 'Electroválvula instalada', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-goteo-linea', category: '06 - Riego Automático', name: 'Línea de goteo para canteros', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-programador', category: '06 - Riego Automático', name: 'Programador de riego instalado', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-sensor-lluvia', category: '06 - Riego Automático', name: 'Sensor de lluvia instalado', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'riego-tobera-emergente', category: '06 - Riego Automático', name: 'Toberas emergentes (cuerpo + boquilla)', unit: 'U', matPrice: 9500, laborPrice: 3500 },
+            { id: 'riego-zanja-tendido', category: '06 - Riego Automático', name: 'Zanjeo y tapado para riego', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'ocj-bordura-plastica', category: '07 - Obra Civil en Jardín', name: 'Bordura plástica o metálica para canteros', unit: 'ML', matPrice: 0, laborPrice: 0 },
             { id: 'ocj-cont-hierro-1x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 1"x1/8 c/estacas', unit: 'ML', matPrice: 3259.17, laborPrice: 3500 },
             { id: 'ocj-cont-hierro-2x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 2"x1/8 c/estacas', unit: 'ML', matPrice: 5291, laborPrice: 5500 },
             { id: 'ocj-cont-hierro-3x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 3"x1/8 c/estacas', unit: 'ML', matPrice: 8285, laborPrice: 8500 },
             { id: 'ocj-cont-hierro-4x18', category: '07 - Obra Civil en Jardín', name: 'Contención de hierro 4"x1/8 c/estacas', unit: 'ML', matPrice: 9960, laborPrice: 10500 },
             { id: 'ocj-cont-quebracho-cepillado', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho cepillado c/estacas', unit: 'ML', matPrice: 9666, laborPrice: 10700 },
-
-            { id: 'ocj-durmiente-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Durmientes Quebracho 1 mt colorado', unit: 'ML', matPrice: 16000, laborPrice: 0 },
+            { id: 'ocj-cont-quebracho-rustico', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho rústico c/estacas', unit: 'ML', matPrice: 8500, laborPrice: 10700 },
             { id: 'ocj-durmiente-q-1m-blanco', category: '07 - Obra Civil en Jardín', name: 'Durmientes Quebracho 1 mt blanco', unit: 'ML', matPrice: 20000, laborPrice: 0 },
-            { id: 'ocj-tabla-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Tabla Quebracho 1 mt colorado', unit: 'ML', matPrice: 14000, laborPrice: 0 },
+            { id: 'ocj-durmiente-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Durmientes Quebracho 1 mt colorado', unit: 'ML', matPrice: 16000, laborPrice: 0 },
+            { id: 'ocj-geotextil-colocacion', category: '07 - Obra Civil en Jardín', name: 'Geotextil colocado', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'ocj-mamposteria-canteros', category: '07 - Obra Civil en Jardín', name: 'Mampostería p/ canteros elevados (ladrillo hueco)', unit: 'M2', matPrice: 14500, laborPrice: 24000 },
+            { id: 'ocj-paso-piedra-laja', category: '07 - Obra Civil en Jardín', name: 'Paso de piedra/laja en jardín', unit: 'M2', matPrice: 0, laborPrice: 0 },
             { id: 'ocj-tabla-q-1m-blanco', category: '07 - Obra Civil en Jardín', name: 'Tabla Quebracho 1 mt blanco', unit: 'ML', matPrice: 17000, laborPrice: 0 },
-            { id: '707', category: '07 - Obra Civil en Jardín', name: 'Contención de quebracho rústico c/estacas', unit: 'ML', matPrice: 8500, laborPrice: 10700 },
-            { id: '801', category: '08 - Iluminación Exterior', name: 'Estacas LED para plantas (Artefacto + Lámpara)', unit: 'U', matPrice: 18000, laborPrice: 6500 },
-            { id: '903', category: '09 - Mantenimiento y Poda', name: 'Corte de césped general (Hasta 1000m2)', unit: 'M2', matPrice: 0, laborPrice: 150 },
-            { id: '1201', category: '12 - Diseño y Modelado', name: 'Diseño de paisaje completo y anteproyecto conceptual', unit: 'GL', matPrice: 20000, laborPrice: 180000 },
-            { id: 'aridos-piedra-partida-6-20', category: '13 - Áridos', name: 'Acarreo y colocación de Piedra Partida 6/20', unit: 'M³', matPrice: 85000, laborPrice: 0 },
+            { id: 'ocj-tabla-q-1m-color', category: '07 - Obra Civil en Jardín', name: 'Tabla Quebracho 1 mt colorado', unit: 'ML', matPrice: 14000, laborPrice: 0 },
+            { id: 'ocj-tensor-trepadoras', category: '07 - Obra Civil en Jardín', name: 'Tensor galvanizado para trepadoras', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'ilu-baliza-jardin', category: '08 - Iluminación Exterior', name: 'Baliza de jardín instalada', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'ilu-cableado-exterior', category: '08 - Iluminación Exterior', name: 'Cableado exterior enterrado/protegido', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'ilu-estacas-led', category: '08 - Iluminación Exterior', name: 'Estacas LED para plantas (artefacto + lámpara)', unit: 'U', matPrice: 18000, laborPrice: 6500 },
+            { id: 'ilu-spot-piso', category: '08 - Iluminación Exterior', name: 'Spot de piso exterior instalado', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'ilu-transformador-tablero', category: '08 - Iluminación Exterior', name: 'Transformador/tablero para iluminación exterior', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'mant-corte-cesped', category: '09 - Mantenimiento y Poda', name: 'Corte de césped general (hasta 1000 m2)', unit: 'M2', matPrice: 0, laborPrice: 150 },
+            { id: 'mant-desmalezado', category: '09 - Mantenimiento y Poda', name: 'Desmalezado manual de canteros', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'mant-fertilizacion', category: '09 - Mantenimiento y Poda', name: 'Fertilización de césped o canteros', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'mant-limpieza-canteros', category: '09 - Mantenimiento y Poda', name: 'Limpieza y emprolijado de canteros', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'mant-poda-liviana', category: '09 - Mantenimiento y Poda', name: 'Poda liviana de arbustos', unit: 'H', matPrice: 0, laborPrice: 0 },
+            { id: 'cob-chips-madera', category: '10 - Coberturas y Mulch', name: 'Chips de madera colocados', unit: 'M3', matPrice: 0, laborPrice: 0 },
+            { id: 'cob-corteza-pino', category: '10 - Coberturas y Mulch', name: 'Corteza de pino colocada', unit: 'M3', matPrice: 0, laborPrice: 0 },
+            { id: 'cob-piedra-decorativa', category: '10 - Coberturas y Mulch', name: 'Piedra decorativa en canteros', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'dren-cano-perforado', category: '11 - Drenajes', name: 'Caño drenante perforado instalado', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'dren-pozo-absorcion', category: '11 - Drenajes', name: 'Pozo de absorción / drenaje', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'dren-zanja-drenante', category: '11 - Drenajes', name: 'Zanja drenante con piedra y geotextil', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'dis-anteproyecto', category: '12 - Diseño y Modelado', name: 'Diseño de paisaje completo y anteproyecto conceptual', unit: 'GL', matPrice: 20000, laborPrice: 180000 },
+            { id: 'dis-modelado-3d', category: '12 - Diseño y Modelado', name: 'Modelado 3D / visualización de jardín', unit: 'GL', matPrice: 0, laborPrice: 0 },
+            { id: 'dis-plano-plantacion', category: '12 - Diseño y Modelado', name: 'Plano de plantación', unit: 'GL', matPrice: 0, laborPrice: 0 },
+            { id: 'aridos-canto-rodado', category: '13 - Áridos', name: 'Acarreo y colocación de Canto Rodado', unit: 'M³', matPrice: 0, laborPrice: 0 },
+            { id: 'aridos-granza-blanca', category: '13 - Áridos', name: 'Acarreo y colocación de Granza Blanca', unit: 'M³', matPrice: 0, laborPrice: 0 },
             { id: 'aridos-piedra-binder', category: '13 - Áridos', name: 'Acarreo y colocación de Piedra Binder', unit: 'M³', matPrice: 151000, laborPrice: 0 },
+            { id: 'aridos-piedra-partida-620', category: '13 - Áridos', name: 'Acarreo y colocación de Piedra Partida 6/20', unit: 'M³', matPrice: 85000, laborPrice: 0 },
             { id: 'aridos-arena', category: '13 - Áridos', name: 'Acarreo y desparramo de Arena', unit: 'M³', matPrice: 40000, laborPrice: 0 },
-
-            { id: 'sol-cantero-terminado', category: '👑 Soluciones Paisajísticas', name: 'Cantero terminado (incluye desmonte 20 cm, compost y chips)', unit: 'M2', matPrice: 25000, laborPrice: 12000 },
-            { id: 'sol-cesped-premium', category: '👑 Soluciones Paisajísticas', name: 'Implantación de césped premium (base completa + colocación)', unit: 'M2', matPrice: 18000, laborPrice: 9000 },
             { id: 'sol-camino-binder', category: '👑 Soluciones Paisajísticas', name: 'Camino paisajístico Binder (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 9000, laborPrice: 7000 },
             { id: 'sol-camino-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Camino paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
+            { id: 'sol-cantero-terminado', category: '👑 Soluciones Paisajísticas', name: 'Cantero terminado (incluye desmonte 20 cm, compost y chips)', unit: 'M2', matPrice: 25000, laborPrice: 12000 },
             { id: 'sol-fogonero-binder', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Binder (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 9000, laborPrice: 7000 },
             { id: 'sol-fogonero-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
+            { id: 'sol-cesped-premium', category: '👑 Soluciones Paisajísticas', name: 'Implantación de césped premium (base completa + colocación)', unit: 'M2', matPrice: 18000, laborPrice: 9000 },
             { id: 'keyrock-pisos-drenantes-link', category: '🌿 Pisos Drenantes KeyRock', name: 'Conocer KeyRock Paisajismo', unit: 'INFO', matPrice: 0, laborPrice: 0, url: 'https://www.keyrockpaisajismo.com.ar' },
-
-
+            { id: 'keyrock-drenante-peatonal', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante peatonal Stick Bound', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'keyrock-drenante-vehicular', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante vehicular Stick Bound', unit: 'M2', matPrice: 0, laborPrice: 0 },
         ];
 
         window.app = {
@@ -1417,54 +1479,26 @@
 
             // --- DATABASE & INDICES ---
             loadDatabase: function() {
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), async (globalSnap) => {
-                    if (globalSnap.empty) { const batch = writeBatch(db); INITIAL_CATALOG.forEach(i => batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), i)); await batch.commit(); return; }
-                    const existingIds = new Set(globalSnap.docs.map(d => d.id));
-                    const missingBaseItems = INITIAL_CATALOG.filter(i => !existingIds.has(i.id));
-                    if (missingBaseItems.length) {
-                        const batch = writeBatch(db);
-                        missingBaseItems.forEach(i => batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), i));
-                        await batch.commit();
-                        return;
-                    }
-                    const g = globalSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                    const baseById = Object.fromEntries(INITIAL_CATALOG.map(i => [i.id, i]));
-                    const unitFixItems = ['ocj-durmiente-q-1m-color','ocj-durmiente-q-1m-blanco','ocj-tabla-q-1m-color','ocj-tabla-q-1m-blanco'];
-                    const docsToFix = g.filter(i => unitFixItems.includes(i.id) && i.unit !== 'ML');
-                    if (docsToFix.length) {
-                        const batchFix = writeBatch(db);
-                        docsToFix.forEach(i => {
-                            const b = baseById[i.id];
-                            batchFix.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), i.id), {
-                                category: b.category,
-                                name: b.name,
-                                unit: 'ML',
-                                matPrice: b.matPrice,
-                                laborPrice: b.laborPrice
-                            }, { merge: true });
-                        });
-                        await batchFix.commit();
-                        return;
-                    }
-                    onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
-                        const c = {}; uSnap.forEach(d => { c[d.id] = d.data(); });
-                        this.database = g.map(i => {
-                            const base = INITIAL_CATALOG.find(b => b.id === i.id);
-                            const o = c[i.id];
-                            return {
-                                ...i,
-                                category: base?.category ?? i.category,
-                                name: base?.name ?? i.name,
-                                unit: base?.unit ?? i.unit,
-                                matPrice: o?.matPrice ?? i.matPrice ?? base?.matPrice ?? 0,
-                                laborPrice: o?.laborPrice ?? i.laborPrice ?? base?.laborPrice ?? 0,
-                                url: base?.url ?? i.url ?? null
-                            };
-                        }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
-                        if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search').value);
-                        if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
-                        if(document.getElementById('project-items-table')) this.renderProjectTable();
-                    });
+                if(!this.user) return;
+
+                // Catálogo local: esta versión NO lee ni escribe el catálogo público de Firestore.
+                // Firestore solo guarda precios personales del usuario, cómputos, perfil y borradores.
+                onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
+                    const c = {};
+                    uSnap.forEach(d => { c[d.id] = d.data(); });
+
+                    this.database = INITIAL_CATALOG.map(i => {
+                        const o = c[i.id];
+                        return {
+                            ...i,
+                            matPrice: o?.matPrice ?? i.matPrice ?? 0,
+                            laborPrice: o?.laborPrice ?? i.laborPrice ?? 0
+                        };
+                    }).sort((a,b)=>a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
+
+                    if(document.getElementById('catalog-list')) this.renderCatalog(document.getElementById('item-search')?.value || '');
+                    if(document.getElementById('db-items-table')) this.renderDatabaseTable('');
+                    if(document.getElementById('project-items-table')) this.renderProjectTable();
                 });
             },
             updateDbPrice: async function(id, f, val) { if(!this.user) return; const item = this.database.find(x => x.id === id); if(item) item[f] = parseFloat(val)||0; if(document.getElementById('project-items-table')) this.renderProjectTable(); try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices', id), { [f]: parseFloat(val)||0 }, { merge: true }); this.showToast('Costo actualizado.'); } catch(e){ this.showToast('No se pudo guardar el costo.'); } },
