@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VerdeCot | Presupuestos de Paisajismo</title>
-    <!-- V18.1 estable: catálogo local ordenado; Firestore no administra catálogo público. -->
+    <!-- VerdeCot V18.8: ayuda guiada completa agregada sobre base V18.7 estable. -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -47,7 +47,7 @@
             @page { size: landscape; margin: 10mm; }
             html, body { background-color: white !important; color: black !important; height: auto !important; min-height: 100% !important; overflow: visible !important; }
             
-            .print-hide, aside, header, .sismat-tabs, .sismat-actions, #toast-container, .md\:hidden { display: none !important; }
+            .print-hide, aside, header, .verdecot-tabs, .verdecot-actions, #toast-container, .md\:hidden { display: none !important; }
             
             main, #main-content, #budget-panel, #budget-panel > div, .table-container { 
                 overflow: visible !important; 
@@ -113,11 +113,80 @@
             body.print-mode-mano #budget-summary-block > div:nth-child(3) { display: none !important; }
             body.print-mode-planilla #budget-summary-block { display: none !important; }
         }
+
+        .help-pulse {
+            animation: verdecotHelpPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes verdecotHelpPulse {
+            0%, 100% { transform: translateY(0); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+            50% { transform: translateY(-1px); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        }
+
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden selection:bg-emerald-500 selection:text-white no-select">
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 print-hide"></div>
+
+    <!-- MODAL AYUDA GUIADA VERDECOT - módulo independiente -->
+    <div id="guided-help-modal" class="fixed inset-0 bg-slate-900/70 z-[70] hidden items-center justify-center p-4 print-hide backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden fade-in border border-slate-200 flex flex-col">
+            <div class="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white p-5 flex justify-between items-start gap-4">
+                <div>
+                    <div class="text-[10px] uppercase tracking-[0.22em] font-black text-emerald-200">Ayuda guiada VerdeCot</div>
+                    <h3 class="text-xl md:text-2xl font-black mt-1">Aprender a usar VerdeCot</h3>
+                    <p class="text-xs text-emerald-100 mt-2 max-w-2xl">Elegí un tema o usá Siguiente / Anterior para aprender paso a paso. Esta guía no modifica datos.</p>
+                </div>
+                <button onclick="app.closeHelpGuide()" class="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] min-h-0 flex-1">
+                <div class="border-r border-slate-200 bg-slate-50 p-4 overflow-y-auto custom-scrollbar">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Temas de ayuda</div>
+                    <div id="guided-help-topic-list" class="space-y-2"></div>
+                </div>
+
+                <div class="p-5 md:p-7 overflow-y-auto custom-scrollbar">
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                        <div id="guided-help-progress" class="text-[11px] font-black uppercase tracking-wider text-emerald-700">Paso 1 de 1</div>
+                        <button id="guided-help-go" onclick="app.goToHelpTarget()" class="hidden bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all">
+                            <i class="fa-solid fa-location-arrow mr-2"></i>Ir a esta pestaña
+                        </button>
+                    </div>
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
+                        <div id="guided-help-bar" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+
+                    <div id="guided-help-icon" class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-4 text-2xl">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <h4 id="guided-help-title" class="text-2xl font-black text-slate-800 tracking-tight mb-3">Guía rápida</h4>
+                    <p id="guided-help-text" class="text-sm md:text-base text-slate-700 leading-relaxed font-medium"></p>
+                    <div id="guided-help-note" class="mt-5 bg-amber-50 border border-amber-100 text-amber-900 rounded-2xl p-4 text-xs md:text-sm leading-relaxed hidden"></div>
+
+                    <div class="mt-8 flex flex-col sm:flex-row justify-between gap-3">
+                        <button onclick="app.prevHelpStep()" class="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-black transition-all">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>Anterior
+                        </button>
+                        <div class="flex gap-3">
+                            <button onclick="app.closeHelpGuide()" class="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-black transition-all">Cerrar</button>
+                            <button onclick="app.nextHelpStep()" class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black shadow-sm transition-all">
+                                Siguiente<i class="fa-solid fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <label class="mt-6 flex items-center gap-2 text-xs text-slate-500 font-bold">
+                        <input id="guided-help-disable" type="checkbox" onchange="app.setHelpTipsDisabled(this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                        No mostrar el destello inicial de ayuda
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div id="subscription-modal" class="fixed inset-0 bg-slate-900/95 z-[60] hidden flex-col items-center justify-center p-4 overflow-y-auto print-hide backdrop-blur-md">
         <div class="max-w-5xl w-full text-center fade-in">
@@ -129,16 +198,16 @@
         </div>
     </div>
 
-    <!-- MODAL DE GUARDADO DE PROYECTO TIPO SISMAT -->
+    <!-- MODAL DE GUARDADO DE PROYECTO VERDECOT -->
     <div id="save-budget-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex-col items-center justify-center p-4 print-hide backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden fade-in border border-slate-200">
             <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-floppy-disk text-emerald-600 mr-2"></i> Guardar Cómputo</h3>
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-floppy-disk text-emerald-600 mr-2"></i> Guardar Proyecto</h3>
                 <button onclick="app.closeSaveModal()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="p-6 overflow-y-auto max-h-[70vh]">
                 <div class="mb-6">
-                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Título del Cómputo <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Nombre del Proyecto <span class="text-red-500">*</span></label>
                     <input type="text" id="save-title" placeholder="Ej: Jardín Familia Pérez" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all font-bold text-slate-800">
                 </div>
                 
@@ -151,7 +220,7 @@
                 <div id="save-extra-info" class="hidden space-y-4 pt-2 border-t border-slate-100">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha del Cómputo</label>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha del Proyecto</label>
                             <input type="date" id="save-date" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
                         </div>
                         <div>
@@ -159,7 +228,7 @@
                             <input type="text" id="save-client" placeholder="Opcional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Dirección de la Obra</label>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Dirección del Proyecto</label>
                             <input type="text" id="save-address" placeholder="Opcional" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400 font-medium text-slate-700">
                         </div>
                         <div>
@@ -176,7 +245,7 @@
             <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
                 <button onclick="app.closeSaveModal()" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
                 <button onclick="app.executeSaveProject()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar Presupuesto
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Proyecto
                 </button>
             </div>
         </div>
@@ -247,7 +316,7 @@
                     Presupuesta como un <br> <span class="text-emerald-400">Verdadero Profesional</span>
                 </h1>
                 <p class="text-lg md:text-xl text-slate-300 font-medium mb-12 max-w-2xl leading-relaxed">
-                    Software de cálculo de materiales, mano de obra e inflación, diseñado exclusivamente para <span class="text-white font-bold">constructores y paisajistas</span>.
+                    Software simple para calcular materiales, mano de obra y rentabilidad, pensado para <span class="text-white font-bold">paisajistas y constructores de jardines</span>.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center w-full sm:w-auto">
                     <button onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-xl font-bold text-base transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]">
@@ -276,7 +345,7 @@
                         <div class="text-4xl font-black text-white mb-8">$0</div>
                         <ul class="text-slate-300 space-y-4 mb-8 flex-1 text-sm">
                             <li><i class="fa-solid fa-check text-slate-500 mr-2"></i>Acceso a lista base</li>
-                            <li><i class="fa-solid fa-check text-slate-500 mr-2"></i>Cómputo estándar</li>
+                            <li><i class="fa-solid fa-check text-slate-500 mr-2"></i>Presupuesto estándar</li>
                         </ul>
                         <button onclick="app.signInDemo()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">Probar Demo</button>
                     </div>
@@ -289,7 +358,7 @@
                         <ul class="text-slate-200 space-y-4 mb-8 flex-1 text-sm font-medium mt-6">
                             <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Proyectos Ilimitados</li>
                             <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Ajuste por inflación</li>
-                            <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Catálogo editable</li>
+                            <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Rubros editables</li>
                         </ul>
                         <button onclick="document.getElementById('auth-section').scrollIntoView({behavior:'smooth'})" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold rounded-xl transition-all shadow-lg">Comenzar Ahora</button>
                     </div>
@@ -316,7 +385,7 @@
             <div class="max-w-5xl mx-auto px-4">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Accede a tu cuenta</h2>
-                    <p class="text-slate-500 mt-2">Crea tu usuario o inicia sesión para gestionar tus obras.</p>
+                    <p class="text-slate-500 mt-2">Crea tu usuario o inicia sesión para gestionar tus proyectos de paisajismo.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
@@ -324,11 +393,12 @@
                     <div class="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-2 h-full bg-slate-800"></div>
                         <h3 class="text-2xl font-black text-slate-800 mb-2">Soy Nuevo</h3>
-                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita. <span class="block mt-1 text-[11px] font-bold text-amber-600">Etapa privada: solo usuarios autorizados.</span></p>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita. <span class="block mt-1 text-[11px] font-bold text-amber-600">Acceso privado: solo usuarios autorizados.</span></p>
                         <div class="space-y-5">
                             <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="reg-email" autocomplete="email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
                             <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="reg-password" autocomplete="new-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
                             <button id="btn-register" class="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg mt-4 transition-all">Crear Mi Cuenta</button>
+                            <p class="text-[11px] text-slate-500 leading-relaxed mt-3">Al crear una cuenta, el usuario declara haber leído y aceptar los Términos y privacidad de VerdeCot Basic publicados en esta pantalla.</p>
                         </div>
                     </div>
                     
@@ -343,9 +413,115 @@
                             <button id="btn-login" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-[0_5px_15px_rgba(16,185,129,0.3)] mt-4 transition-all">
                                 Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>
                             </button>
+                            <p class="text-[11px] text-slate-500 leading-relaxed mt-3">Al ingresar, el usuario acepta utilizar VerdeCot conforme a sus Términos y privacidad vigentes.</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- TÉRMINOS Y PRIVACIDAD VERDECOT - V18.5.1 REFORZADOS -->
+                <div id="terminos-privacidad-verdecot" class="mt-12 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                    <div class="p-6 md:p-8 border-b border-slate-100 bg-slate-50">
+                        <h3 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+                            <i class="fa-solid fa-shield-halved text-emerald-600"></i> Términos y privacidad de VerdeCot Basic
+                        </h3>
+                        <p class="text-sm text-slate-500 mt-2 leading-relaxed">Condiciones propias de uso, privacidad, responsabilidad y protección del sistema. Al registrarse, iniciar sesión o utilizar VerdeCot, el usuario declara conocer y aceptar estos términos.</p>
+                    </div>
+
+                    <div class="p-6 md:p-8 space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white" open>
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-file-signature text-emerald-600 mr-2"></i>Aceptación de términos</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>El acceso, registro, inicio de sesión o uso de <b>VerdeCot Basic</b> implica la aceptación plena de estos Términos y privacidad, junto con las condiciones comerciales, técnicas y operativas vigentes al momento de uso.</p>
+                                <p>Si el usuario no acepta estas condiciones, deberá abstenerse de registrarse, iniciar sesión o utilizar la app.</p>
+                                <p>VerdeCot podrá actualizar estos términos para mejorar la seguridad, funcionamiento, cumplimiento legal, política comercial o protección del sistema. La continuidad en el uso de la app luego de publicados los cambios implicará aceptación de la versión vigente.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-file-contract text-emerald-600 mr-2"></i>Uso permitido y responsabilidad del usuario</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p><b>VerdeCot Basic</b> es una herramienta digital de apoyo para presupuestar proyectos de paisajismo, jardinería, obra civil de jardín, plantaciones, riego, áridos, suelos y tareas relacionadas.</p>
+                                <p>Los valores, cálculos, índices, rendimientos, materiales, mano de obra, gastos y resultados mostrados por la app son orientativos y dependen de la información cargada por cada usuario. Cada profesional es responsable de revisar, validar y adaptar sus presupuestos antes de enviarlos a un cliente o usarlos comercialmente.</p>
+                                <p>VerdeCot no será responsable por errores de carga, interpretación incorrecta, falta de revisión profesional, uso indebido de precios, cálculos, unidades, márgenes, impuestos, rendimientos, presupuestos, documentos, datos guardados o decisiones comerciales tomadas por el usuario.</p>
+                                <p>El usuario se compromete a utilizar VerdeCot de forma lícita, responsable y profesional, sin afectar la seguridad de la app, acceder a cuentas ajenas, alterar datos de terceros, compartir accesos no autorizados, cargar información falsa, dañar el servicio o usar la herramienta con fines fraudulentos, abusivos o contrarios a la ley.</p>
+                                <p>VerdeCot podrá limitar, suspender o cancelar accesos cuando detecte uso indebido, incumplimiento de estos términos, fraude, intento de copia, afectación de seguridad o cualquier conducta que comprometa la estabilidad del sistema o los derechos de VerdeCot o de terceros.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-code text-emerald-600 mr-2"></i>Propiedad intelectual y protección del sistema</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>VerdeCot Basic, su nombre, identidad visual, estructura de uso, diseño, textos propios, organización funcional, base de rubros, criterios de cálculo, interfaces, código, lógica interna, documentación, contenidos y futuras mejoras constituyen activos propios de VerdeCot y se encuentran protegidos por las normas de propiedad intelectual, derechos de autor, marcas, competencia leal y demás normativa aplicable.</p>
+                                <p>El acceso a VerdeCot se otorga únicamente como licencia de uso personal, limitada, revocable, no exclusiva e intransferible. El usuario no adquiere propiedad sobre el sistema, el código, la interfaz, la estructura, las bases de datos, la lógica de funcionamiento ni ningún otro componente de la app.</p>
+                                <p>Queda expresamente prohibido copiar, reproducir, modificar, adaptar, revender, distribuir, publicar, sublicenciar, clonar, replicar, descompilar, extraer, automatizar, reutilizar comercialmente, imitar de forma confundible, realizar ingeniería inversa o intentar obtener el código fuente, estructura interna, base de datos, lógica de cálculo, diseño o funcionamiento de VerdeCot sin autorización expresa y por escrito.</p>
+                                <p>También queda prohibido utilizar capturas, textos, estructura, diseño, base de rubros, plantillas, cálculos, documentación o cualquier elemento de VerdeCot para crear, entrenar, comercializar o mejorar productos competidores o sistemas derivados no autorizados.</p>
+                                <p>Ante cualquier uso no autorizado, copia, modificación, explotación, acceso indebido, intento de extracción, reproducción, distribución, daño, competencia desleal o afectación de los derechos de VerdeCot, VerdeCot se reserva el derecho de suspender el acceso e iniciar las acciones legales, reclamos, medidas cautelares, denuncias o pedidos de reparación económica que pudieran corresponder.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-user-lock text-emerald-600 mr-2"></i>Privacidad y datos del usuario</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>Para funcionar, VerdeCot puede guardar datos asociados a la cuenta del usuario, como correo electrónico, perfil, datos de contacto, logo o membrete, costos personalizados, presupuestos/proyectos guardados, gastos, cálculos y configuraciones de uso.</p>
+                                <p>Estos datos se utilizan para permitir el acceso a la app, recuperar proyectos, personalizar presupuestos, mejorar la experiencia del usuario, brindar soporte, administrar suscripciones y mantener la seguridad del sistema.</p>
+                                <p>VerdeCot no vende los datos personales de sus usuarios. El acceso a la información se limita a lo necesario para operar, mantener, proteger y mejorar la app.</p>
+                                <p>La app utiliza servicios externos necesarios para su funcionamiento, como autenticación, base de datos, hosting, almacenamiento o herramientas de pago cuando correspondan. Cada servicio externo puede tener sus propias políticas y condiciones.</p>
+                                <p>El usuario puede solicitar la revisión, corrección o eliminación de sus datos vinculados a VerdeCot, sujeto a verificaciones de identidad y a las obligaciones operativas, comerciales o legales que pudieran corresponder.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-credit-card text-emerald-600 mr-2"></i>Suscripciones, acceso y pagos</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>VerdeCot Basic podrá ofrecer planes gratuitos, pruebas temporales, accesos autorizados, membresías mensuales, semestrales, anuales u otras modalidades comerciales.</p>
+                                <p>Mientras la app se encuentre en etapa privada o beta, algunos accesos, precios, condiciones, medios de pago y beneficios pueden administrarse de forma manual o cambiar antes del lanzamiento comercial definitivo.</p>
+                                <p>Cuando se implemente el cobro automático, el acceso del usuario podrá depender del estado de pago de su membresía y de las reglas vigentes para cada plan. La falta de pago, cancelación, rechazo del medio de pago o incumplimiento de condiciones podrá limitar o suspender el acceso.</p>
+                                <p>Los importes publicados en la app pueden actualizarse por cambios comerciales, fiscales, técnicos, legales o de costos del servicio.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-shield-virus text-emerald-600 mr-2"></i>Seguridad, cuentas y accesos</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>El usuario es responsable de mantener la confidencialidad de su cuenta, correo, contraseña, accesos, dispositivos y cualquier información vinculada a su uso de VerdeCot.</p>
+                                <p>Está prohibido intentar vulnerar, sobrecargar, interferir, automatizar, escanear, copiar, extraer datos, acceder a áreas no autorizadas, usar credenciales ajenas o ejecutar acciones que comprometan la seguridad, estabilidad o disponibilidad de VerdeCot.</p>
+                                <p>VerdeCot podrá registrar eventos técnicos y operativos necesarios para prevenir abuso, investigar incidentes, proteger usuarios, mejorar el servicio y resguardar sus derechos.</p>
+                            </div>
+                        </details>
+
+                        <details class="group border border-slate-200 rounded-2xl p-4 bg-white">
+                            <summary class="cursor-pointer list-none flex items-center justify-between gap-4 font-black text-slate-800">
+                                <span><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i>Aviso profesional y limitación de responsabilidad</span>
+                                <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-4 space-y-3 text-slate-600">
+                                <p>VerdeCot es una herramienta de cálculo, organización y apoyo comercial. No reemplaza el criterio profesional, la visita técnica, la evaluación del terreno, la revisión de proveedores, la normativa aplicable ni la responsabilidad comercial de quien emite el presupuesto.</p>
+                                <p>Antes de presentar un presupuesto a un cliente, el usuario debe revisar cantidades, unidades, precios, márgenes, impuestos, gastos, condiciones de obra, plazos, disponibilidad de materiales, riesgos técnicos y cualquier otra variable relevante.</p>
+                                <p>VerdeCot no responderá por pérdidas, reclamos, diferencias de precio, errores de obra, presupuestos mal confeccionados, lucro cesante, conflictos con clientes, incumplimientos, daños indirectos o consecuencias derivadas del uso, imposibilidad de uso, mala carga de datos o interpretación de la información generada por la app.</p>
+                                <p>Este texto es una base propia de VerdeCot y puede requerir revisión legal, contable o fiscal antes de la monetización definitiva de la app.</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -364,12 +540,23 @@
                 </div>
                 
                 <nav class="hidden md:flex gap-6 text-sm font-bold text-emerald-900/60 ml-2">
-                    <button onclick="app.navigate('computo')" id="nav-computo" title="Armá el presupuesto activo con rubros e ítems del catálogo." class="hover:text-emerald-700 transition-colors">Cómputo</button>
+                    <button onclick="app.navigate('computo')" id="nav-computo" title="Armá el proyecto activo con rubros e ítems de paisajismo." class="hover:text-emerald-700 transition-colors">Presupuesto</button>
                     <button onclick="app.navigate('database')" id="nav-database" title="Editá tus costos maestros de materiales y mano de obra." class="hover:text-emerald-700 transition-colors">Mis Costos</button>
-                    <button onclick="app.navigate('calculadoras')" id="nav-calculadoras" title="Calculá costos reales de obra como combustible y jornales." class="hover:text-emerald-700 transition-colors">Calculadoras</button>
-                    <button onclick="app.navigate('gastos')" id="nav-gastos" title="Cargá gastos adicionales recuperables de la obra." class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
+                    <button onclick="app.navigate('calculadoras')" id="nav-calculadoras" title="Calculá costos reales del proyecto como combustible y jornales." class="hover:text-emerald-700 transition-colors">Calculadoras</button>
+                    <button onclick="app.navigate('gastos')" id="nav-gastos" title="Cargá gastos adicionales recuperables del proyecto." class="hover:text-emerald-700 transition-colors">Mis Gastos</button>
                     <button onclick="app.navigate('indices')" id="nav-indices" title="Consultá variaciones mensuales y aplicá ajustes a tus costos." class="hover:text-emerald-700 transition-colors">Índices y Rentabilidad</button>
                     <button onclick="app.navigate('herramientas')" id="nav-herramientas" title="Herramientas técnicas: rendimiento de mano de obra y conversores de unidades." class="hover:text-emerald-700 transition-colors">Herramientas</button>
+                    <div class="relative flex items-center">
+                        <button onclick="app.openQuickHelpFromNav('primeros')" id="nav-help" title="Abrí la guía rápida de VerdeCot cuando la necesites." class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50 transition-all shadow-sm font-black">
+                            <i class="fa-solid fa-circle-question text-emerald-600"></i> Guía rápida
+                        </button>
+                        <div id="help-nav-bubble" class="hidden absolute left-1/2 -translate-x-1/2 top-full mt-3 w-64 bg-white border border-emerald-200 rounded-2xl shadow-xl p-3 text-xs text-slate-700 leading-relaxed z-40">
+                            <button onclick="app.markHelpLauncherSeen()" class="absolute top-2 right-2 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+                            <div class="font-black text-emerald-800 mb-1 uppercase tracking-wider text-[10px]">Nueva ayuda guiada</div>
+                            <div class="pr-4">¿Primera vez en VerdeCot? Tocá <strong>Guía rápida</strong> y aprendé paso a paso cómo usar la app.</div>
+                            <div class="absolute left-1/2 -translate-x-1/2 -top-2 w-4 h-4 bg-white border-l border-t border-emerald-200 rotate-45"></div>
+                        </div>
+                    </div>
                 </nav>
             </div>
             <div class="flex items-center gap-4">
@@ -389,7 +576,7 @@
                     <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-slate-100 z-50 divide-y divide-slate-50 origin-top-right transform transition-all overflow-hidden border border-slate-200">
                         <div class="py-2">
                             <button onclick="app.navigate('panel'); app.toggleUserMenu(event);" class="w-full text-left px-5 py-3 text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-3 transition-colors">
-                                <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-folder-open"></i></div> Mis Cómputos
+                                <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center"><i class="fa-solid fa-folder-open"></i></div> Mis Proyectos
                             </button>
                             <button onclick="app.navigate('perfil'); app.toggleUserMenu(event);" class="w-full text-left px-5 py-3 text-sm text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-3 transition-colors">
                                 <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-user-pen"></i></div> Editar Perfil
@@ -404,22 +591,23 @@
                 </div>
             </div>
         </div>
-        <div class="sismat-ticker bg-[#eaf4ef] border-t border-emerald-200 px-5 py-1.5 flex items-center justify-between text-[11px] font-bold text-emerald-800 overflow-x-auto whitespace-nowrap gap-6 shadow-inner">
+        <div class="verdecot-ticker bg-[#eaf4ef] border-t border-emerald-200 px-5 py-1.5 flex items-center justify-between text-[11px] font-bold text-emerald-800 overflow-x-auto whitespace-nowrap gap-6 shadow-inner">
             <div class="flex items-center uppercase tracking-wider" id="current-date">ÚLTIMA ACTUALIZACIÓN: 6/6/2026 · CATÁLOGO LOCAL ORDENADO</div>
         </div>
     </header>
 
     <div class="md:hidden flex bg-emerald-50 border-b border-emerald-200 text-[10px] font-bold print-hide overflow-x-auto shadow-sm">
-        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Cómputo</button>
+        <button onclick="app.navigate('computo')" class="flex-1 py-3 px-2 text-emerald-700 border-b-2 border-emerald-600 whitespace-nowrap"><i class="fa-solid fa-calculator mb-1 text-sm block"></i> Presupuesto</button>
         <button onclick="app.navigate('database')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-database mb-1 text-sm block"></i> Costos</button>
         <button onclick="app.navigate('calculadoras')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-sliders mb-1 text-sm block"></i> Calculadoras</button>
         <button onclick="app.navigate('gastos')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-receipt mb-1 text-sm block"></i> Gastos</button>
+        <button onclick="app.openQuickHelpFromNav('primeros')" class="flex-1 py-3 px-2 text-emerald-900/60 whitespace-nowrap"><i class="fa-solid fa-circle-question mb-1 text-sm block"></i> Ayuda</button>
     </div>
 
     <main id="main-content" class="flex-1 w-full flex flex-col md:flex-row overflow-hidden bg-[#f4f7f6]">
     </main>
 
-    <!-- VISTA PANEL PRINCIPAL CON "MIS CÓMPUTOS" TIPO SISMAT -->
+    <!-- VISTA PANEL PRINCIPAL CON "MIS CÓMPUTOS" VERDECOT -->
     <template id="view-panel">
         <div class="w-full h-full overflow-y-auto bg-[#f4f7f6] fade-in pb-10">
             <!-- Header simple del panel -->
@@ -433,17 +621,17 @@
             </div>
 
             <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6">
-                <!-- Pestañas estilo Sismat -->
+                <!-- Pestañas propias de VerdeCot -->
                 <div class="flex border-b border-slate-300 mb-6">
-                    <button class="bg-emerald-800 text-white font-bold text-sm px-6 py-3 rounded-t-lg border border-emerald-800 border-b-0 shadow-sm relative top-[1px]">Mis Cómputos</button>
+                    <button class="bg-emerald-800 text-white font-bold text-sm px-6 py-3 rounded-t-lg border border-emerald-800 border-b-0 shadow-sm relative top-[1px]">Mis Proyectos</button>
                 </div>
 
-                <!-- Tabla de cómputos -->
+                <!-- Tabla de proyectos -->
                 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
                     <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-700 text-sm">Cómputos Guardados</h3>
+                        <h3 class="font-bold text-slate-700 text-sm">Proyectos Guardados</h3>
                         <button onclick="app.clearProjectAndNavigate()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Nuevo Cómputo
+                            <i class="fa-solid fa-plus"></i> Nuevo Proyecto
                         </button>
                     </div>
                     <div class="overflow-x-auto w-full">
@@ -451,7 +639,7 @@
                             <thead class="bg-[#f8fafc] text-slate-500 font-bold border-b border-slate-200">
                                 <tr>
                                     <th class="p-3">Fecha</th>
-                                    <th class="p-3">Título del cómputo</th>
+                                    <th class="p-3">Nombre del proyecto</th>
                                     <th class="p-3">Cliente</th>
                                     <th class="p-3 text-right">Materiales</th>
                                     <th class="p-3 text-right">Mano de Obra</th>
@@ -474,13 +662,13 @@
         <div class="flex flex-col md:flex-row w-full h-full fade-in">
             <div class="w-full md:w-[320px] bg-white border-r border-slate-200 flex flex-col h-1/2 md:h-full z-0 shadow-sm print-hide">
                 <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
-                    <h2 class="font-bold text-lg leading-none tracking-tight">Catálogo</h2>
+                    <h2 class="font-bold text-lg leading-none tracking-tight">Rubros de Paisajismo</h2>
                     <i class="fa-solid fa-calculator text-emerald-300 text-xs"></i>
                 </div>
                 <div class="p-3 border-b border-slate-200 bg-slate-50">
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-                        <input type="text" id="item-search" placeholder="Buscar etapa o tareas..." class="w-full pl-8 pr-2 py-2 text-xs border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium" onkeyup="app.filterCatalog(this.value)">
+                        <input type="text" id="item-search" placeholder="Buscar rubro o tarea..." class="w-full pl-8 pr-2 py-2 text-xs border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium" onkeyup="app.filterCatalog(this.value)">
                     </div>
                 </div>
                 <div class="overflow-y-auto flex-1 custom-scrollbar" id="catalog-list"></div>
@@ -489,14 +677,14 @@
             <div class="flex-1 flex flex-col p-4 md:p-6 h-full overflow-hidden">
                 <div id="budget-panel" class="bg-white border border-slate-200 shadow-sm rounded-2xl flex-1 flex flex-col overflow-hidden">
                     
-                    <div class="border-b border-slate-200 flex px-4 pt-3 gap-4 text-sm font-medium text-slate-600 sismat-tabs print-hide bg-slate-50">
+                    <div class="border-b border-slate-200 flex px-4 pt-3 gap-4 text-sm font-medium text-slate-600 verdecot-tabs print-hide bg-slate-50">
                         <div class="flex items-center gap-2 border-b-2 border-emerald-600 text-emerald-700 pb-2 px-2 font-bold tracking-tight">
-                            <i class="fa-solid fa-file-invoice"></i> Hoja de Presupuesto <span id="current-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
+                            <i class="fa-solid fa-file-invoice"></i> Proyecto de Jardín <span id="current-workspace-name" class="ml-2 text-xs font-medium text-slate-400 italic"></span>
                         </div>
                     </div>
 
                     <div class="p-4 flex-1 flex flex-col overflow-hidden">
-                        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 sismat-actions print-hide">
+                        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4 verdecot-actions print-hide">
                             <div class="flex bg-slate-100 p-1 rounded-xl text-[10px] md:text-xs font-bold text-slate-600 w-full xl:w-auto" id="mode-buttons">
                                 <button onclick="app.setViewMode('TOTAL')" id="btn-mode-TOTAL" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all bg-emerald-800 text-white shadow-sm">TOTAL</button>
                                 <button onclick="app.setViewMode('MATERIALES')" id="btn-mode-MATERIALES" class="flex-1 md:flex-none px-3 md:px-5 py-2 rounded-lg transition-all hover:bg-slate-200">MATERIALES</button>
@@ -507,7 +695,7 @@
                                 <!-- Botón Limpiar para no borrar 1 a 1 -->
                                 <button onclick="app.clearProject()" class="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 px-4 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm transition-all"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
                                 <button onclick="app.openPrintModal()" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 shadow-sm transition-all"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
-                                <button onclick="app.openSaveModal()" class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-600 px-5 py-2 rounded-xl hover:bg-emerald-700 shadow-sm transition-all"><i class="fa-solid fa-floppy-disk"></i> Guardar Cómputo</button>
+                                <button onclick="app.openSaveModal()" class="flex items-center gap-2 text-xs font-bold text-white bg-emerald-600 px-5 py-2 rounded-xl hover:bg-emerald-700 shadow-sm transition-all"><i class="fa-solid fa-floppy-disk"></i> Guardar Proyecto</button>
                             </div>
                         </div>
 
@@ -516,7 +704,7 @@
                             <div class="flex items-center gap-5">
                                 <img id="print-logo-img" src="" style="max-height: 60px; display: none;">
                                 <div>
-                                    <h1 id="print-header-name" style="font-size: 22px; font-weight: 900; color: #0f172a; margin:0; line-height:1;">Presupuesto de Obra</h1>
+                                    <h1 id="print-header-name" style="font-size: 22px; font-weight: 900; color: #0f172a; margin:0; line-height:1;">Presupuesto de Paisajismo</h1>
                                     <p id="print-header-sub" style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;"></p>
                                 </div>
                             </div>
@@ -564,7 +752,7 @@
             <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
                 <div>
                     <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Calculadoras</h2>
-                    <p class="text-sm text-slate-500 mt-1">Herramientas rápidas para calcular costos reales de obra sin mezclar conceptos.</p>
+                    <p class="text-sm text-slate-500 mt-1">Herramientas rápidas para calcular costos reales del proyecto sin mezclar conceptos.</p>
                 </div>
             </div>
             <div class="max-w-7xl mx-auto px-4 md:px-6 mt-6 space-y-6">
@@ -606,7 +794,7 @@
                     <div class="p-4 border-b border-slate-200 bg-blue-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                         <div>
                             <h3 class="font-black text-blue-900 text-sm flex items-center gap-2"><i class="fa-solid fa-users-gear text-blue-600"></i> Jornales reales</h3>
-                            <p class="text-xs text-blue-700 mt-1">Cargá la cuadrilla real solo como referencia interna. No modifica automáticamente el cómputo ni la rentabilidad.</p>
+                            <p class="text-xs text-blue-700 mt-1">Cargá la cuadrilla real solo como referencia interna. No modifica automáticamente el proyecto ni la rentabilidad.</p>
                         </div>
                         <button onclick="app.addWageRow()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm"><i class="fa-solid fa-plus"></i> Agregar trabajador/a</button>
                     </div>
@@ -626,7 +814,7 @@
                         </table>
                     </div>
                     <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">M.O. del cómputo</div><div id="wages-estimated-mo" class="font-black text-slate-800 mt-1">$0</div></div>
+                        <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">M.O. del proyecto</div><div id="wages-estimated-mo" class="font-black text-slate-800 mt-1">$0</div></div>
                         <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[10px] uppercase font-bold text-slate-400">Jornales reales</div><div id="wages-real-total" class="font-black text-blue-800 mt-1">$0</div></div>
                         <div id="wages-advice" class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs font-bold text-emerald-800 flex items-center">Sin jornales reales cargados.</div>
                     </div>
@@ -647,7 +835,7 @@
                 <div class="lg:col-span-2 space-y-6">
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-700 text-sm">Gastos adicionales de obra</h3>
+                            <h3 class="font-bold text-slate-700 text-sm">Gastos adicionales del proyecto</h3>
                             <button onclick="app.addExpenseRow()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i> Agregar gasto</button>
                         </div>
                         <div class="overflow-x-auto">
@@ -681,7 +869,7 @@
             <div class="bg-white border-b border-slate-200 py-6 px-6 shadow-sm flex items-center justify-between">
                 <div>
                     <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Herramientas</h2>
-                    <p class="text-sm text-slate-500 mt-1">Calculadoras técnicas de apoyo. No modifican automáticamente el cómputo ni Mis Costos.</p>
+                    <p class="text-sm text-slate-500 mt-1">Calculadoras técnicas de apoyo para presupuestar más rápido y actualizar costos puntuales con control del usuario.</p>
                 </div>
             </div>
 
@@ -693,7 +881,27 @@
                         <h3 class="font-black text-emerald-900 text-sm flex items-center gap-2">
                             <i class="fa-solid fa-person-digging text-emerald-600"></i> Calculadora de rendimiento de mano de obra
                         </h3>
-                        <p class="text-xs text-emerald-700 mt-1">Calcula el costo sugerido por unidad para luego cargarlo manualmente en Mis Costos.</p>
+                        <p class="text-xs text-emerald-700 mt-1">Calcula el costo sugerido por unidad y permite aplicarlo solo a la mano de obra del ítem elegido en Mis Costos.</p>
+                    </div>
+
+                    <div class="p-4 border-b border-slate-100 bg-slate-50/60">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Rubro a actualizar</label>
+                                <select id="tool-labor-category" onchange="app.onToolLaborCategoryChange()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-bold outline-none focus:border-emerald-500 bg-white">
+                                    <option value="">Seleccionar rubro...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ítem a actualizar</label>
+                                <select id="tool-labor-item" onchange="app.onToolLaborItemChange()" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-bold outline-none focus:border-emerald-500 bg-white">
+                                    <option value="">Seleccionar ítem...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 font-semibold mt-3 leading-relaxed">
+                            Esta acción modifica únicamente la <b>mano de obra</b> del ítem seleccionado. No cambia materiales, unidad, rubro, presupuestos guardados ni otros valores.
+                        </p>
                     </div>
 
                     <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -729,7 +937,7 @@
                         </div>
                     </div>
 
-                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div class="bg-white border border-slate-200 rounded-xl p-3">
                             <div class="text-[10px] uppercase font-bold text-slate-400">Costo por minuto cuadrilla</div>
                             <div id="tool-labor-cost-min" class="font-black text-slate-800 mt-1">$0</div>
@@ -741,6 +949,15 @@
                         <div class="bg-emerald-800 text-white rounded-xl p-3">
                             <div class="text-[10px] uppercase font-bold text-emerald-100">Valor sugerido para Mis Costos</div>
                             <div id="tool-labor-unit-cost" class="font-black text-white mt-1 text-xl">$0</div>
+                        </div>
+                        <div class="bg-white border border-emerald-200 rounded-xl p-3 flex flex-col justify-between">
+                            <div>
+                                <div class="text-[10px] uppercase font-bold text-slate-400">Aplicar al ítem elegido</div>
+                                <div id="tool-labor-selected-label" class="text-[11px] text-slate-500 font-semibold mt-1 truncate">Sin ítem seleccionado</div>
+                            </div>
+                            <button onclick="app.applyToolLaborToSelectedItem()" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i> Aplicar M.O.
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -809,10 +1026,10 @@
                             <h4 class="font-black text-slate-800 text-sm mb-2"><i class="fa-solid fa-1 text-emerald-600 mr-2"></i>Primer presupuesto</h4>
                             <ol class="text-xs text-slate-600 space-y-1 list-decimal pl-4">
                                 <li>Entrá a <b>Mis Costos</b> y revisá tus precios.</li>
-                                <li>Volvé a <b>Cómputo</b>.</li>
-                                <li>Elegí ítems del catálogo.</li>
+                                <li>Volvé a <b>Presupuesto</b>.</li>
+                                <li>Elegí ítems de los rubros de paisajismo.</li>
                                 <li>Cargá cantidades.</li>
-                                <li>Guardá el cómputo.</li>
+                                <li>Guardá el proyecto.</li>
                                 <li>Generá PDF horizontal o vertical.</li>
                             </ol>
                         </div>
@@ -820,7 +1037,7 @@
                         <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
                             <h4 class="font-black text-slate-800 text-sm mb-2"><i class="fa-solid fa-database text-emerald-600 mr-2"></i>Mis Costos</h4>
                             <p class="text-xs text-slate-600 leading-relaxed">
-                                Es tu lista base editable. Podés cambiar materiales y mano de obra de cada ítem. Lo que cargues acá después se usa en Cómputo.
+                                Es tu lista base editable. Podés cambiar materiales y mano de obra de cada ítem. Lo que cargues acá después se usa en el presupuesto del proyecto.
                             </p>
                         </div>
 
@@ -933,7 +1150,7 @@
                                 <div>
                                     <div class="text-[10px] font-black uppercase tracking-widest text-emerald-600">Por presupuesto</div>
                                     <h3 class="text-xl font-black text-emerald-900 leading-tight">Tu rentabilidad</h3>
-                                    <p class="text-sm text-emerald-900/70 mt-1 leading-relaxed">Colocá tu rentabilidad sobre gestión de materiales y mano de obra solo para el presupuesto activo. No modifica <b>Mis Costos</b> y vuelve a 0 cuando creás un cómputo nuevo.</p>
+                                    <p class="text-sm text-emerald-900/70 mt-1 leading-relaxed">Colocá tu rentabilidad sobre gestión de materiales y mano de obra solo para el presupuesto activo. No modifica <b>Mis Costos</b> y vuelve a 0 cuando creás un proyecto nuevo.</p>
                                 </div>
                             </div>
 
@@ -1031,7 +1248,7 @@
         const firebaseConfig = { apiKey: "AIzaSyAtsboZ8Fnn8PEg8Z99iQUOJhJy4DRyn5g", authDomain: "verdecot-1db0d.firebaseapp.com", projectId: "verdecot-1db0d", storageBucket: "verdecot-1db0d.firebasestorage.app", messagingSenderId: "260889721477", appId: "1:260889721477:web:0139c4c1ac5bd5391147ec" };
         const appInstance = initializeApp(firebaseConfig); const auth = getAuth(appInstance); const db = getFirestore(appInstance); const appId = 'verdecot-app';
 
-        // Seguridad V17: etapa privada con lista cerrada de emails autorizados.
+        // Seguridad V17: acceso privado con lista cerrada de emails autorizados.
         const AUTHORIZED_EMAILS = [
             'edumaccormack@gmail.com',
             'verdecot@gmail.com',
@@ -1047,7 +1264,7 @@
         const isAuthorizedEmail = (email) => AUTHORIZED_EMAILS.includes(normalizeEmail(email));
 
         const showAccessDeniedMessage = () => {
-            const message = 'Usuario no autorizado. VerdeCot está en etapa privada.';
+            const message = 'Usuario no autorizado. VerdeCot está en acceso privado.';
             try {
                 if (window.app && typeof window.app.showToast === 'function') {
                     window.app.showToast(message);
@@ -1179,8 +1396,8 @@
             { id: 'sol-fogonero-granza-blanca', category: '👑 Soluciones Paisajísticas', name: 'Fogonero paisajístico Granza Blanca (incluye desmonte, geotextil y compactación)', unit: 'M2', matPrice: 8500, laborPrice: 7000 },
             { id: 'sol-cesped-premium', category: '👑 Soluciones Paisajísticas', name: 'Implantación de césped premium (base completa + colocación)', unit: 'M2', matPrice: 18000, laborPrice: 9000 },
             { id: 'keyrock-pisos-drenantes-link', category: '🌿 Pisos Drenantes KeyRock', name: 'Conocer KeyRock Paisajismo', unit: 'INFO', matPrice: 0, laborPrice: 0, url: 'https://www.keyrockpaisajismo.com.ar' },
-            { id: 'keyrock-drenante-peatonal', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante peatonal Stick Bound', unit: 'M2', matPrice: 0, laborPrice: 0 },
-            { id: 'keyrock-drenante-vehicular', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante vehicular Stick Bound', unit: 'M2', matPrice: 0, laborPrice: 0 },
+            { id: 'keyrock-drenante-peatonal', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante KeyRock peatonal', unit: 'U', matPrice: 0, laborPrice: 0 },
+            { id: 'keyrock-drenante-vehicular', category: '🌿 Pisos Drenantes KeyRock', name: 'Piso drenante KeyRock vehicular', unit: 'U', matPrice: 0, laborPrice: 0 },
         ];
 
         window.app = {
@@ -1322,27 +1539,285 @@
             },
 
 
+
+            // --- AYUDA GUIADA VERDECOT ---
+            helpGuideIndex: 0,
+            helpGuideTopic: 'primeros',
+            helpGuideTopics: [
+                { id: 'primeros', label: 'Primeros pasos', icon: 'fa-seedling' },
+                { id: 'costos', label: 'Mis Costos', icon: 'fa-database' },
+                { id: 'manoObra', label: 'Calcular M.O.', icon: 'fa-person-digging' },
+                { id: 'presupuesto', label: 'Presupuesto', icon: 'fa-file-invoice' },
+                { id: 'proyectos', label: 'Mis Proyectos', icon: 'fa-folder-open' },
+                { id: 'gastos', label: 'Mis Gastos', icon: 'fa-receipt' },
+                { id: 'calculadoras', label: 'Calculadoras', icon: 'fa-sliders' },
+                { id: 'indices', label: 'Índices', icon: 'fa-chart-line' },
+                { id: 'perfil', label: 'Perfil', icon: 'fa-user-pen' },
+                { id: 'pdf', label: 'PDF', icon: 'fa-file-pdf' }
+            ],
+            helpGuideSteps: {
+                primeros: [
+                    { title: 'Bienvenido a VerdeCot', icon: 'fa-seedling', view: 'computo', text: 'VerdeCot está pensado para presupuestar proyectos de paisajismo de manera rápida, clara y profesional.', note: 'La guía no modifica datos. Solo te acompaña mientras aprendés.' },
+                    { title: 'Antes de empezar: revisá tus costos', icon: 'fa-database', view: 'database', text: 'El primer paso recomendado es entrar a Mis Costos y revisar que materiales y mano de obra estén actualizados.' },
+                    { title: 'Armá tu presupuesto', icon: 'fa-file-invoice', view: 'computo', text: 'En Presupuesto agregás rubros e ítems desde Rubros de Paisajismo. Después cargás cantidades y VerdeCot calcula totales.' },
+                    { title: 'Guardá el proyecto', icon: 'fa-floppy-disk', view: 'computo', text: 'Cuando tengas el presupuesto armado, usá Guardar Proyecto para conservarlo con cliente, fecha, dirección y observaciones.' },
+                    { title: 'Revisá gastos y rentabilidad', icon: 'fa-chart-line', view: 'gastos', text: 'Mis Gastos, Calculadoras e Índices te ayudan a mirar mejor los costos reales y la ganancia estimada.' },
+                    { title: 'Generá el PDF', icon: 'fa-file-pdf', view: 'computo', text: 'Antes de enviar el presupuesto, revisá cantidades, totales y datos del cliente. Después usá Imprimir / PDF.' }
+                ],
+                costos: [
+                    { title: 'Mis Costos: precios maestros', icon: 'fa-database', view: 'database', text: 'Mis Costos es la base de precios de VerdeCot. Lo que cargues ahí se usa para armar nuevos presupuestos.' },
+                    { title: 'Buscá rápido un ítem', icon: 'fa-search', view: 'database', text: 'Usá el buscador para encontrar tareas, materiales o rubros sin recorrer toda la lista.' },
+                    { title: 'Abrí o cerrá categorías', icon: 'fa-folder-open', view: 'database', text: 'Las categorías se pueden abrir y cerrar para trabajar más ordenado y no ver todo junto.' },
+                    { title: 'Editá materiales', icon: 'fa-box-open', view: 'database', text: 'En cada ítem podés modificar el valor de materiales. Ese valor queda como referencia para futuros presupuestos.' },
+                    { title: 'Editá mano de obra', icon: 'fa-person-digging', view: 'database', text: 'También podés modificar la mano de obra manualmente, separada de materiales, para mantener claro el costo real.' },
+                    { title: 'Usá Herramientas cuando tengas dudas', icon: 'fa-screwdriver-wrench', view: 'herramientas', text: 'Si no sabés cuánto cargar de mano de obra, usá la calculadora de rendimiento y aplicá el valor al ítem.' }
+                ],
+                manoObra: [
+                    { title: 'Calculadora de rendimiento', icon: 'fa-person-digging', view: 'herramientas', text: 'Esta calculadora sirve para estimar cuánto cuesta la mano de obra por unidad según jornal, horas, operarios y rendimiento.' },
+                    { title: 'Elegí rubro e ítem', icon: 'fa-list-check', view: 'herramientas', text: 'Primero seleccioná el rubro y el ítem que querés actualizar. Así VerdeCot sabe dónde aplicar el resultado.' },
+                    { title: 'Cargá jornal y jornada', icon: 'fa-clock', view: 'herramientas', text: 'Indicá el jornal diario, las horas de jornada y la cantidad de operarios que participan en esa tarea.' },
+                    { title: 'Indicá el tiempo por unidad', icon: 'fa-stopwatch', view: 'herramientas', text: 'Cargá cuántos minutos lleva ejecutar una unidad de esa tarea: m², m³, ML, unidad o global.' },
+                    { title: 'Aplicar M.O.', icon: 'fa-check', view: 'herramientas', text: 'Cuando el valor te cierre, tocá Aplicar M.O. para actualizar solo la mano de obra del ítem seleccionado.', note: 'No cambia materiales, unidad, nombre, rubro ni proyectos guardados.' },
+                    { title: 'Confirmá en Mis Costos', icon: 'fa-database', view: 'database', text: 'Después de aplicar, podés ir a Mis Costos y verificar que el valor quedó actualizado correctamente.' }
+                ],
+                presupuesto: [
+                    { title: 'Presupuesto: proyecto activo', icon: 'fa-file-invoice', view: 'computo', text: 'La pestaña Presupuesto es donde armás el proyecto actual con los ítems que realmente vas a ejecutar.' },
+                    { title: 'Rubros de Paisajismo', icon: 'fa-seedling', view: 'computo', text: 'A la izquierda tenés los rubros e ítems. Buscá la tarea, abrí el rubro y agregá lo que corresponda.' },
+                    { title: 'Cargá cantidades', icon: 'fa-keyboard', view: 'computo', text: 'Una vez agregado un ítem, cargá la cantidad. VerdeCot calcula materiales, mano de obra y subtotal automáticamente.' },
+                    { title: 'Usá los modos de vista', icon: 'fa-table-columns', view: 'computo', text: 'TOTAL muestra todo. MATERIALES enfoca materiales. M. OBRA enfoca mano de obra. PLANILLA sirve para una vista más técnica.' },
+                    { title: 'Limpiar con cuidado', icon: 'fa-trash-can', view: 'computo', text: 'El botón Limpiar borra el proyecto activo. Usalo solo cuando quieras empezar de cero.' },
+                    { title: 'Guardar Proyecto', icon: 'fa-floppy-disk', view: 'computo', text: 'Guardar Proyecto conserva el presupuesto con datos del cliente, dirección, teléfono y observaciones.' }
+                ],
+                proyectos: [
+                    { title: 'Mis Proyectos', icon: 'fa-folder-open', view: 'panel', text: 'Desde el menú de usuario podés entrar a Mis Proyectos para ver presupuestos guardados.' },
+                    { title: 'Abrir un proyecto guardado', icon: 'fa-rotate-left', view: 'panel', text: 'Cuando abrís un proyecto guardado, VerdeCot recupera los ítems, cantidades y datos cargados.' },
+                    { title: 'Nuevo proyecto', icon: 'fa-plus', view: 'panel', text: 'Usá Nuevo Proyecto para empezar un presupuesto en blanco sin mezclarlo con uno anterior.' },
+                    { title: 'Orden y respaldo', icon: 'fa-shield-halved', view: 'panel', text: 'Guardá cada proyecto con un nombre claro de cliente o trabajo para encontrarlo rápido después.' }
+                ],
+                gastos: [
+                    { title: 'Mis Gastos', icon: 'fa-receipt', view: 'gastos', text: 'Mis Gastos sirve para cargar costos recuperables del proyecto: peajes, fletes, herramientas, viáticos, residuos o imprevistos.' },
+                    { title: 'Gastos automáticos', icon: 'fa-arrows-rotate', view: 'gastos', text: 'Combustible y jornales reales pueden venir desde Calculadoras como gastos automáticos no editables desde esta pestaña.' },
+                    { title: 'Ganancia estimada', icon: 'fa-chart-simple', view: 'gastos', text: 'La ganancia estimada compara el presupuesto activo contra combustible, jornales reales y gastos cargados.' },
+                    { title: 'No mezclar conceptos', icon: 'fa-scale-balanced', view: 'gastos', text: 'Los gastos ayudan a mirar la rentabilidad, pero no reemplazan materiales ni mano de obra de Mis Costos.' }
+                ],
+                calculadoras: [
+                    { title: 'Calculadora de combustible', icon: 'fa-gas-pump', view: 'calculadoras', text: 'Cargá kilómetros, viajes, consumo y precio por litro para estimar el combustible del proyecto.' },
+                    { title: 'Actualizar en gastos', icon: 'fa-arrows-rotate', view: 'calculadoras', text: 'Cuando el cálculo esté listo, podés actualizar el combustible en Mis Gastos para tenerlo en cuenta en la ganancia.' },
+                    { title: 'Jornales reales', icon: 'fa-users-gear', view: 'calculadoras', text: 'Cargá la cuadrilla real, días y jornales para comparar lo presupuestado contra lo que realmente cuesta la mano de obra.' },
+                    { title: 'Referencia interna', icon: 'fa-eye', view: 'calculadoras', text: 'Las calculadoras ayudan a analizar el proyecto. No reemplazan la revisión profesional antes de enviar un presupuesto.' }
+                ],
+                indices: [
+                    { title: 'Índices y Rentabilidad', icon: 'fa-chart-line', view: 'indices', text: 'Esta pestaña permite simular ajustes por inflación y rentabilidad sobre materiales y mano de obra.' },
+                    { title: 'Índices informativos', icon: 'fa-circle-info', view: 'indices', text: 'Los índices sirven como referencia. Revisá siempre tus precios reales de proveedor y tus costos de trabajo.' },
+                    { title: 'Rentabilidad del proyecto activo', icon: 'fa-percent', view: 'indices', text: 'La rentabilidad se aplica al presupuesto activo, no a toda la base de Mis Costos.' },
+                    { title: 'Revisar antes de enviar', icon: 'fa-check', view: 'computo', text: 'Después de aplicar rentabilidad, volvé al presupuesto y revisá que el total final tenga sentido.' }
+                ],
+                perfil: [
+                    { title: 'Perfil profesional', icon: 'fa-user-pen', view: 'perfil', text: 'En Perfil podés cargar datos de tu empresa o actividad profesional para que aparezcan en los presupuestos.' },
+                    { title: 'Logo para PDF', icon: 'fa-image', view: 'perfil', text: 'Si cargás un logo, VerdeCot puede usarlo en la cabecera de impresión o PDF.' },
+                    { title: 'Datos claros', icon: 'fa-address-card', view: 'perfil', text: 'Revisá nombre, contacto y datos visibles antes de enviar presupuestos a clientes.' }
+                ],
+                pdf: [
+                    { title: 'Imprimir / PDF', icon: 'fa-print', view: 'computo', text: 'Desde Presupuesto podés generar una salida imprimible o PDF del proyecto.' },
+                    { title: 'PDF Horizontal', icon: 'fa-file-pdf', view: 'computo', text: 'El PDF horizontal es útil para revisión técnica, planilla completa o archivo interno.' },
+                    { title: 'PDF Vertical WhatsApp', icon: 'fa-mobile-screen-button', view: 'computo', text: 'El PDF vertical está pensado para enviar de manera más cómoda por WhatsApp o revisar desde el celular.' },
+                    { title: 'Opciones de impresión', icon: 'fa-sliders', view: 'computo', text: 'Antes de imprimir podés ocultar costos unitarios, mano de obra, materiales o subtotales según lo que quieras mostrar.' },
+                    { title: 'Control final', icon: 'fa-clipboard-check', view: 'computo', text: 'Antes de enviar, revisá cantidades, precios, cliente, observaciones y total general.' }
+                ]
+            },
+            openQuickHelpFromNav: function(topic = 'primeros') {
+                this.markHelpLauncherSeen();
+                this.openHelpGuide(topic);
+            },
+            openHelpGuide: function(topic = 'primeros') {
+                this.helpGuideTopic = this.helpGuideSteps[topic] ? topic : 'primeros';
+                this.helpGuideIndex = 0;
+                const modal = document.getElementById('guided-help-modal');
+                if(modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+                const disable = document.getElementById('guided-help-disable');
+                if(disable) disable.checked = localStorage.getItem('verdecotHelpTipsDisabled') === '1';
+                this.renderHelpTopics();
+                this.renderHelpStep();
+            },
+            closeHelpGuide: function() {
+                const modal = document.getElementById('guided-help-modal');
+                if(modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            },
+            renderHelpTopics: function() {
+                const list = document.getElementById('guided-help-topic-list');
+                if(!list) return;
+                list.innerHTML = this.helpGuideTopics.map(t => {
+                    const active = t.id === this.helpGuideTopic;
+                    return `<button onclick="app.selectHelpTopic('${t.id}')" class="w-full text-left rounded-2xl px-4 py-3 border transition-all flex items-center gap-3 ${active ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50'}"><i class="fa-solid ${t.icon} ${active ? 'text-white' : 'text-emerald-600'}"></i><span class="text-xs font-black">${t.label}</span></button>`;
+                }).join('');
+            },
+            selectHelpTopic: function(topic) {
+                this.helpGuideTopic = this.helpGuideSteps[topic] ? topic : 'primeros';
+                this.helpGuideIndex = 0;
+                this.renderHelpTopics();
+                this.renderHelpStep();
+            },
+            renderHelpStep: function() {
+                const steps = this.helpGuideSteps[this.helpGuideTopic] || this.helpGuideSteps.primeros;
+                const step = steps[this.helpGuideIndex] || steps[0];
+                const title = document.getElementById('guided-help-title');
+                const text = document.getElementById('guided-help-text');
+                const progress = document.getElementById('guided-help-progress');
+                const bar = document.getElementById('guided-help-bar');
+                const icon = document.getElementById('guided-help-icon');
+                const note = document.getElementById('guided-help-note');
+                const go = document.getElementById('guided-help-go');
+                if(title) title.textContent = step.title;
+                if(text) text.textContent = step.text;
+                if(progress) progress.textContent = `Paso ${this.helpGuideIndex + 1} de ${steps.length}`;
+                if(bar) bar.style.width = `${((this.helpGuideIndex + 1) / steps.length) * 100}%`;
+                if(icon) icon.innerHTML = `<i class="fa-solid ${step.icon || 'fa-seedling'}"></i>`;
+                if(note) {
+                    note.textContent = step.note || '';
+                    note.classList.toggle('hidden', !step.note);
+                }
+                if(go) {
+                    go.classList.toggle('hidden', !step.view);
+                    go.dataset.view = step.view || '';
+                }
+            },
+            nextHelpStep: function() {
+                const steps = this.helpGuideSteps[this.helpGuideTopic] || this.helpGuideSteps.primeros;
+                if(this.helpGuideIndex < steps.length - 1) {
+                    this.helpGuideIndex++;
+                    this.renderHelpStep();
+                } else {
+                    this.showToast('Guía finalizada. Podés volver a abrirla cuando quieras desde Guía rápida.');
+                    this.closeHelpGuide();
+                }
+            },
+            prevHelpStep: function() {
+                if(this.helpGuideIndex > 0) {
+                    this.helpGuideIndex--;
+                    this.renderHelpStep();
+                }
+            },
+            goToHelpTarget: function() {
+                const steps = this.helpGuideSteps[this.helpGuideTopic] || this.helpGuideSteps.primeros;
+                const step = steps[this.helpGuideIndex] || {};
+                if(step.view) {
+                    this.closeHelpGuide();
+                    this.navigate(step.view);
+                    this.showToast('Abrí Guía rápida de nuevo para continuar cuando quieras.');
+                }
+            },
+            setHelpTipsDisabled: function(disabled) {
+                localStorage.setItem('verdecotHelpTipsDisabled', disabled ? '1' : '0');
+                this.updateHelpLauncherCue();
+                this.showToast(disabled ? 'Destello inicial de ayuda desactivado.' : 'Destello inicial de ayuda activado.');
+            },
+            registerHelpLauncherVisit: function() {
+                const visits = parseInt(localStorage.getItem('verdecotHelpLauncherVisits') || '0', 10) || 0;
+                localStorage.setItem('verdecotHelpLauncherVisits', String(Math.min(visits + 1, 99)));
+            },
+            updateHelpLauncherCue: function() {
+                const visits = parseInt(localStorage.getItem('verdecotHelpLauncherVisits') || '0', 10) || 0;
+                const disabled = localStorage.getItem('verdecotHelpTipsDisabled') === '1';
+                const shouldHighlight = visits === 0 && !disabled;
+                const btn = document.getElementById('nav-help');
+                const bubble = document.getElementById('help-nav-bubble');
+                if(btn) btn.classList.toggle('help-pulse', shouldHighlight);
+                if(bubble) bubble.classList.toggle('hidden', !shouldHighlight);
+            },
+            markHelpLauncherSeen: function() {
+                const visits = parseInt(localStorage.getItem('verdecotHelpLauncherVisits') || '0', 10) || 0;
+                if(visits < 1) localStorage.setItem('verdecotHelpLauncherVisits', '1');
+                const btn = document.getElementById('nav-help');
+                const bubble = document.getElementById('help-nav-bubble');
+                if(btn) btn.classList.remove('help-pulse');
+                if(bubble) bubble.classList.add('hidden');
+            },
+
             // --- HERRAMIENTAS ---
             renderTools: function() {
                 setTimeout(() => {
+                    this.populateToolLaborSelectors();
                     this.calcToolLabor();
                     this.calcToolUnits();
                 }, 0);
             },
 
-            calcToolLabor: function() {
+            populateToolLaborSelectors: function() {
+                const catSelect = document.getElementById('tool-labor-category');
+                if(!catSelect) return;
+                const currentCat = catSelect.value;
+                const cats = [...new Set(this.database.filter(i => i.unit !== 'INFO').map(i => i.category))].sort((a,b) => {
+                    const priority = c => c.includes('Soluciones Paisajísticas') ? 0 : (c.includes('Pisos Drenantes KeyRock') ? 1 : 2);
+                    const pa = priority(a), pb = priority(b);
+                    if(pa !== pb) return pa - pb;
+                    return a.localeCompare(b, 'es', {sensitivity:'base'});
+                });
+                catSelect.innerHTML = '<option value="">Seleccionar rubro...</option>' + cats.map(c => `<option value="${String(c).replace(/"/g,'&quot;')}">${c}</option>`).join('');
+                if(currentCat && cats.includes(currentCat)) catSelect.value = currentCat;
+                this.onToolLaborCategoryChange(false);
+            },
+
+            onToolLaborCategoryChange: function(resetItem = true) {
+                const catSelect = document.getElementById('tool-labor-category');
+                const itemSelect = document.getElementById('tool-labor-item');
+                if(!catSelect || !itemSelect) return;
+                const cat = catSelect.value;
+                const currentItem = resetItem ? '' : itemSelect.value;
+                const items = this.database.filter(i => i.category === cat && i.unit !== 'INFO').sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
+                itemSelect.innerHTML = '<option value="">Seleccionar ítem...</option>' + items.map(i => `<option value="${i.id}">${i.name} (${i.unit})</option>`).join('');
+                if(currentItem && items.some(i => i.id === currentItem)) itemSelect.value = currentItem;
+                this.onToolLaborItemChange();
+            },
+
+            onToolLaborItemChange: function() {
+                const itemId = document.getElementById('tool-labor-item')?.value;
+                const item = this.database.find(i => i.id === itemId);
+                const label = document.getElementById('tool-labor-selected-label');
+                if(label) label.textContent = item ? item.name : 'Sin ítem seleccionado';
+                if(item) {
+                    const unitSelect = document.getElementById('tool-labor-unit');
+                    if(unitSelect) {
+                        const u = String(item.unit || '').toUpperCase();
+                        const mapped = u === 'M2' ? 'm²' : (u === 'M3' ? 'm³' : (u === 'U' || u === 'UNIDAD' ? 'unidad' : item.unit));
+                        if([...unitSelect.options].some(o => o.value === mapped)) unitSelect.value = mapped;
+                    }
+                }
+                this.calcToolLabor();
+            },
+
+            getToolLaborCalculation: function() {
                 const val = id => Number(document.getElementById(id)?.value) || 0;
                 const jornal = val('tool-labor-jornal');
                 const horas = val('tool-labor-hours');
                 const operarios = val('tool-labor-workers') || 1;
                 const minutosUnidad = val('tool-labor-min-per-unit');
                 const cantidad = val('tool-labor-qty') || 1;
-                const unidad = document.getElementById('tool-labor-unit')?.value || 'm²';
-
                 const costoMinutoCuadrilla = horas > 0 ? (jornal * operarios) / (horas * 60) : 0;
                 const minutosTotales = minutosUnidad * cantidad;
                 const costoTotal = costoMinutoCuadrilla * minutosTotales;
                 const costoUnidad = cantidad > 0 ? costoTotal / cantidad : 0;
+                return { costoMinutoCuadrilla, costoTotal, costoUnidad };
+            },
+
+            applyToolLaborToSelectedItem: async function() {
+                const itemId = document.getElementById('tool-labor-item')?.value;
+                const item = this.database.find(i => i.id === itemId);
+                if(!item) { this.showToast('Elegí primero un ítem para actualizar.'); return; }
+                const calc = this.getToolLaborCalculation();
+                const newValue = Math.round(calc.costoUnidad || 0);
+                await this.updateDbPrice(itemId, 'laborPrice', newValue);
+                this.showToast(`Mano de obra aplicada a: ${item.name}`);
+            },
+
+            calcToolLabor: function() {
+                const unidad = document.getElementById('tool-labor-unit')?.value || 'm²';
+                const { costoMinutoCuadrilla, costoTotal, costoUnidad } = this.getToolLaborCalculation();
 
                 const minEl = document.getElementById('tool-labor-cost-min');
                 const totalEl = document.getElementById('tool-labor-total');
@@ -1474,15 +1949,15 @@
                     companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim(),
                     companyLogo: this.userProfile.companyLogo || ''
                 };
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del cómputo.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del proyecto.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
             },
 
             // --- DATABASE & INDICES ---
             loadDatabase: function() {
                 if(!this.user) return;
 
-                // Catálogo local: esta versión NO lee ni escribe el catálogo público de Firestore.
-                // Firestore solo guarda precios personales del usuario, cómputos, perfil y borradores.
+                // Rubros locales: esta versión NO lee ni escribe rubros públicos de Firestore.
+                // Firestore solo guarda precios personales del usuario, proyectos, perfil y borradores.
                 onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'customPrices'), (uSnap) => {
                     const c = {};
                     uSnap.forEach(d => { c[d.id] = d.data(); });
@@ -1641,7 +2116,7 @@
                 this.navigate('computo');
             },
 
-            // --- SISMAT SAVE & DASHBOARD LOGIC ---
+            // --- VERDECOT SAVE & DASHBOARD LOGIC ---
             loadSavedBudgets: function() {
                 onSnapshot(collection(db, 'artifacts', appId, 'users', this.user.uid, 'savedBudgets'), (s) => {
                     this.savedBudgets = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.timestamp - a.timestamp);
@@ -1649,7 +2124,7 @@
                 });
             },
             openSaveModal: function() {
-                if(this.currentProject.items.length === 0) { this.showToast('El cómputo está vacío.'); return; }
+                if(this.currentProject.items.length === 0) { this.showToast('El proyecto está vacío.'); return; }
                 document.getElementById('save-title').value = this.currentProject.title || '';
                 document.getElementById('save-budget-modal').classList.remove('hidden');
                 document.getElementById('save-budget-modal').classList.add('flex');
@@ -1661,7 +2136,7 @@
             executeSaveProject: async function() {
                 if(!this.user) return;
                 const title = document.getElementById('save-title').value.trim();
-                if(!title) { alert('El Título del Cómputo es requerido.'); return; }
+                if(!title) { alert('El Nombre del Proyecto es requerido.'); return; }
 
                 const totals = this.getProjectBaseTotals();
                 let totalMat = totals.mat; let totalMo = totals.mo;
@@ -1697,7 +2172,7 @@
                     this.currentProject.title = title;
                     await this.autoSaveDraft(); // Update draft metadata
                     this.closeSaveModal();
-                    this.showToast('Cómputo guardado exitosamente.');
+                    this.showToast('Proyecto guardado exitosamente.');
                     const wsName = document.getElementById('current-workspace-name');
                     if(wsName) wsName.textContent = `(${title})`;
                 } catch(e) {
@@ -1755,7 +2230,7 @@
                 document.getElementById('save-notes').value = b.notes || '';
 
                 this.navigate('computo');
-                this.showToast('Cómputo cargado.');
+                this.showToast('Proyecto cargado.');
             },
             deleteSavedBudget: async function(projId) {
                 if(!confirm('¿Eliminar definitivamente este presupuesto guardado?')) return;
@@ -1857,7 +2332,7 @@
                 const g = {}; this.currentProject.items.forEach(i => { const dbI = this.database.find(x => x.id === i.dbId); if(dbI) { i.matPrice = dbI.matPrice; i.laborPrice = dbI.laborPrice; i.unit = dbI.unit; i.category = dbI.category; i.name = dbI.name; } if(!g[i.category]) g[i.category] = []; g[i.category].push(i); });
                 tb.innerHTML = ''; let tm=0, to=0;
                 
-                if(this.currentProject.items.length === 0) { tb.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-slate-400 font-medium">Hoja en blanco. Selecciona ítems del catálogo para comenzar.</td></tr>`; }
+                if(this.currentProject.items.length === 0) { tb.innerHTML = `<tr><td colspan="10" class="p-12 text-center text-slate-400 font-medium">Proyecto en blanco. Seleccioná ítems de los rubros para comenzar.</td></tr>`; }
 
                 Object.keys(g).sort().forEach(c => {
                     tb.innerHTML += `<tr><td colspan="10" class="p-3 font-extrabold text-emerald-900 text-[11px] bg-emerald-100/50 uppercase tracking-wider">${c}</td></tr>`;
@@ -1908,10 +2383,15 @@
                     wrap.innerHTML = `<div class="p-10 text-center text-slate-400 font-bold">No se encontraron ítems.</div>`;
                     return;
                 }
-                const cats = [...new Set(filtered.map(i => i.category))].sort();
+                const cats = [...new Set(filtered.map(i => i.category))].sort((a,b) => {
+                    const priority = c => c.includes('Soluciones Paisajísticas') ? 0 : (c.includes('Pisos Drenantes KeyRock') ? 1 : 2);
+                    const pa = priority(a), pb = priority(b);
+                    if(pa !== pb) return pa - pb;
+                    return a.localeCompare(b, 'es', {sensitivity:'base'});
+                });
                 cats.forEach(c => {
                     const items = filtered.filter(i => i.category === c).sort((a,b)=>a.name.localeCompare(b.name, 'es', {sensitivity:'base'}));
-                    const exp = f ? true : (this.expandedCategories[c] !== false);
+                    const exp = f ? true : (this.expandedCategories[c] ?? false);
                     const totalMat = items.reduce((a,i)=>a+(Number(i.matPrice)||0),0);
                     const totalMo = items.reduce((a,i)=>a+(Number(i.laborPrice)||0),0);
                     const block = document.createElement('div');
@@ -1998,7 +2478,7 @@
                         { id:'exp_'+Math.random(), category:'Insumos', detail:'Bolsas, cinta, guantes, discos, tornillos, etc.', qty:1, unitCost:0 },
                         { id:'exp_'+Math.random(), category:'Fletes', detail:'Entrega/retiro de materiales', qty:1, unitCost:0 },
                         { id:'exp_'+Math.random(), category:'Herramientas', detail:'Alquiler, desgaste o reposición', qty:1, unitCost:0 },
-                        { id:'exp_'+Math.random(), category:'Imprevistos', detail:'Margen técnico de obra', qty:1, unitCost:0 }
+                        { id:'exp_'+Math.random(), category:'Imprevistos', detail:'Margen técnico del proyecto', qty:1, unitCost:0 }
                     ];
                 }
             },
@@ -2142,7 +2622,7 @@
                 if(!tb) return;
                 tb.innerHTML = '';
                 if(this.currentProject.wages.length === 0) {
-                    tb.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">Todavía no cargaste jornales reales. Podés usar esta calculadora para validar la mano de obra del cómputo.</td></tr>`;
+                    tb.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">Todavía no cargaste jornales reales. Podés usar esta calculadora para validar la mano de obra del proyecto.</td></tr>`;
                 }
                 this.currentProject.wages.forEach(w => {
                     const subtotal = (Number(w.days)||0) * (Number(w.rate)||0);
@@ -2154,9 +2634,9 @@
                 setTxt('wages-real-total', this.formatCurrency(b.realWages || 0));
                 const advice = document.getElementById('wages-advice');
                 if(advice) {
-                    if((b.realWages||0) <= 0) advice.textContent = 'Sin jornales reales cargados. Sirve como referencia para comparar con la M.O. del cómputo.';
+                    if((b.realWages||0) <= 0) advice.textContent = 'Sin jornales reales cargados. Sirve como referencia para comparar con la M.O. del proyecto.';
                     else if((b.realWages||0) > (b.estimatedMo||0)) advice.textContent = 'Atención: los jornales reales superan la M.O. estimada. Revisá tus costos de mano de obra si corresponde.';
-                    else advice.textContent = 'Los jornales reales están por debajo o similares a la M.O. estimada del cómputo.';
+                    else advice.textContent = 'Los jornales reales están por debajo o similares a la M.O. estimada del proyecto.';
                 }
                 this.syncWageExpense(true);
                 this.renderExpenses();
@@ -2196,7 +2676,7 @@
                 const b = this.getProjectBaseTotals(), exp = this.getExpensesTotal();
                 const active = this.getActiveBudgetTotal ? this.getActiveBudgetTotal() : { amount: b.direct, label: 'Presupuesto activo' };
                 const net = active.amount - exp;
-                if(box) box.innerHTML = `<div class="flex justify-between"><span>${active.label}</span><b>${this.formatCurrency(active.amount)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">El resumen usa la solapa activa del cómputo: Total, Materiales o Mano de obra. Combustible y jornales calculados se descuentan como gastos automáticos.</div>`;
+                if(box) box.innerHTML = `<div class="flex justify-between"><span>${active.label}</span><b>${this.formatCurrency(active.amount)}</b></div><div class="flex justify-between"><span>Total gastos</span><b>${this.formatCurrency(exp)}</b></div><div class="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">El resumen usa la solapa activa del proyecto: Total, Materiales o Mano de obra. Combustible y jornales calculados se descuentan como gastos automáticos.</div>`;
                 if(netBox) netBox.textContent = this.formatCurrency(net);
             },
             renderProfitSummary: function() { this.renderExpensesSummary(); },
@@ -2211,7 +2691,7 @@
 
             printSpecific: function(type) {
                 const b = this.getProjectBaseTotals(); const exp = this.getExpensesTotal();
-                const title = type === 'gastos' ? 'Detalle de Gastos de Obra' : 'Presupuesto de Obra';
+                const title = type === 'gastos' ? 'Detalle de Gastos del Proyecto' : 'Presupuesto de Paisajismo';
                 let rows = '';
                 if(type === 'gastos') {
                     rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Ganancia estimada: ${this.formatCurrency(b.direct-exp)}</h2>`;
@@ -2219,7 +2699,7 @@
                     rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${dbI.name || i.name}</td><td>${dbI.unit || i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
                 const w = window.open('', '_blank');
-                w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px;font-size:16px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Cómputo activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
+                w.document.write(`<html><head><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}h1{border-bottom:2px solid #0f172a;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #cbd5e1;padding:8px;font-size:12px}th{background:#f1f5f9;text-align:left}h2{text-align:right;margin-top:20px;font-size:16px}</style></head><body><h1>${title}</h1><p>${this.currentProject.title || 'Proyecto activo'} - ${new Date().toLocaleDateString('es-AR')}</p>${rows}</body></html>`);
                 w.document.close(); w.focus(); setTimeout(()=>w.print(), 250);
             },
 
@@ -2251,7 +2731,7 @@
                     `;
                 }).join('');
 
-                const company = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Obra';
+                const company = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Paisajismo';
                 const subtitle = this.userProfile.companySubtitle || '';
                 const contact = this.userProfile.companyContact || '';
                 const fecha = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
@@ -2297,7 +2777,7 @@
                             <div class="meta">
                                 <b>Fecha:</b> ${escapeHtml(fecha)}<br>
                                 ${client ? `<b>Cliente:</b> ${escapeHtml(client)}<br>` : ''}
-                                ${address ? `<b>Obra:</b> ${escapeHtml(address)}<br>` : ''}
+                                ${address ? `<b>Proyecto:</b> ${escapeHtml(address)}<br>` : ''}
                                 ${contact ? `<b>Contacto:</b> ${escapeHtml(contact).replace(/\n/g,'<br>')}` : ''}
                             </div>
                         </div>
@@ -2333,7 +2813,7 @@
                     const opt = document.getElementById(`print-opt-${k}`);
                     if(opt && opt.checked) document.body.classList.add(`print-hide-${k}`);
                 });
-                document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Obra';
+                document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Paisajismo';
                 document.getElementById('print-header-sub').textContent = this.userProfile.companySubtitle || '';
                 let contactInfo = this.userProfile.companyContact || '';
                 const client = document.getElementById('save-client')?.value;
@@ -2342,7 +2822,7 @@
 Cliente: ${client}`;
                 const address = document.getElementById('save-address')?.value;
                 if(address) contactInfo += `
-Obra: ${address}`;
+Proyecto: ${address}`;
                 document.getElementById('print-header-contact').textContent = contactInfo;
                 document.getElementById('print-header-date').textContent = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
                 const img = document.getElementById('print-logo-img'); if(this.userProfile.companyLogo) { img.src = this.userProfile.companyLogo; img.style.display = 'block'; } else img.style.display = 'none';
