@@ -1381,6 +1381,8 @@
             { id: 'dren-cano-perforado', category: '11 - Drenajes', name: 'Caño drenante perforado instalado', unit: 'ML', matPrice: 0, laborPrice: 0 },
             { id: 'dren-pozo-absorcion', category: '11 - Drenajes', name: 'Pozo de absorción / drenaje', unit: 'U', matPrice: 0, laborPrice: 0 },
             { id: 'dren-zanja-drenante', category: '11 - Drenajes', name: 'Zanja drenante con piedra y geotextil', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'dren-guardaganado-mamposteria-10cm', category: '11 - Drenajes', name: 'Guardaganado drenante de mampostería 10 cm con zanjeo', unit: 'ML', matPrice: 0, laborPrice: 0 },
+            { id: 'dren-guardaganado-mamposteria-20cm', category: '11 - Drenajes', name: 'Guardaganado drenante de mampostería 20 cm con zanjeo', unit: 'ML', matPrice: 0, laborPrice: 0 },
             { id: 'dis-anteproyecto', category: '12 - Diseño y Modelado', name: 'Diseño de paisaje completo y anteproyecto conceptual', unit: 'GL', matPrice: 20000, laborPrice: 180000 },
             { id: 'dis-modelado-3d', category: '12 - Diseño y Modelado', name: 'Modelado 3D / visualización de jardín', unit: 'GL', matPrice: 0, laborPrice: 0 },
             { id: 'dis-plano-plantacion', category: '12 - Diseño y Modelado', name: 'Plano de plantación', unit: 'GL', matPrice: 0, laborPrice: 0 },
@@ -2694,7 +2696,8 @@
                 const title = type === 'gastos' ? 'Detalle de Gastos del Proyecto' : 'Presupuesto de Paisajismo';
                 let rows = '';
                 if(type === 'gastos') {
-                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Ganancia estimada: ${this.formatCurrency(b.direct-exp)}</h2>`;
+                    const active = this.getActiveBudgetTotal ? this.getActiveBudgetTotal() : { amount: b.direct, label: 'Presupuesto activo' };
+                    rows = `<table><thead><tr><th>Rubro</th><th>Detalle</th><th>Cant.</th><th>Costo unit.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.expenses||[]).map(e=>`<tr><td>${e.category||''}</td><td>${e.detail||''}</td><td>${e.qty||0}</td><td>${this.formatCurrency(e.unitCost||0)}</td><td>${this.formatCurrency((e.qty||0)*(e.unitCost||0))}</td></tr>`).join('')}</tbody></table><h2>${active.label}: ${this.formatCurrency(active.amount)}</h2><h2>Total gastos: ${this.formatCurrency(exp)}</h2><h2>Ganancia estimada: ${this.formatCurrency(active.amount-exp)}</h2>`;
                 } else {
                     rows = `<table><thead><tr><th>Ítem</th><th>Unidad</th><th>Cantidad</th><th>Mat.</th><th>M.O.</th><th>Total</th></tr></thead><tbody>${(this.currentProject.items||[]).map(i=>{const dbI=this.database.find(x=>x.id===i.dbId)||i; const p=this.getProjectProfit ? this.getProjectProfit() : {mat:0,mo:0}; const mat=(dbI.matPrice||0)*(1+p.mat/100)*(i.qty||0); const mo=(dbI.laborPrice||0)*(1+p.mo/100)*(i.qty||0); return `<tr><td>${dbI.name || i.name}</td><td>${dbI.unit || i.unit}</td><td>${i.qty}</td><td>${this.formatCurrency(mat)}</td><td>${this.formatCurrency(mo)}</td><td>${this.formatCurrency(mat+mo)}</td></tr>`}).join('')}</tbody></table><h2>Total presupuesto: ${this.formatCurrency(b.direct)}</h2>`;
                 }
