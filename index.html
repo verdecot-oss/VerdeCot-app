@@ -274,10 +274,10 @@
             </div>
             <div class="space-y-2">
                 <button onclick="app.executePrint()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-print"></i> PDF Horizontal
+                    <i class="fa-solid fa-print"></i> PDF Vertical PC
                 </button>
                 <button onclick="app.executePrintVertical()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-mobile-screen-button"></i> PDF Vertical WhatsApp
+                    <i class="fa-solid fa-mobile-screen-button"></i> PDF Vertical Celular
                 </button>
             </div>
         </div>
@@ -2710,91 +2710,164 @@
                 const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
                 const p = this.getProjectProfit ? this.getProjectProfit() : {mat:0, mo:0};
                 const items = this.currentProject.items || [];
+                const mode = this.viewMode || 'TOTAL';
+                const showMat = mode === 'TOTAL' || mode === 'MATERIALES';
+                const showMo = mode === 'TOTAL' || mode === 'MANO DE OBRA';
+                const showSubtotal = mode !== 'PLANILLA';
+                const modeTitle = mode === 'MATERIALES' ? 'Presupuesto de Materiales' : (mode === 'MANO DE OBRA' ? 'Presupuesto de Mano de Obra' : (mode === 'PLANILLA' ? 'Planilla de Trabajo' : 'Presupuesto Total'));
                 let totalMat = 0, totalMo = 0;
 
-                const rows = items.map(i => {
+                const grouped = {};
+                items.forEach(i => {
                     const dbI = this.database.find(x => x.id === i.dbId) || i;
-                    const qty = Number(i.qty) || 0;
-                    const unit = dbI.unit || i.unit || '';
-                    const matUnit = (Number(dbI.matPrice) || 0) * (1 + (Number(p.mat) || 0) / 100);
-                    const moUnit = (Number(dbI.laborPrice) || 0) * (1 + (Number(p.mo) || 0) / 100);
-                    const mat = matUnit * qty;
-                    const mo = moUnit * qty;
-                    const total = mat + mo;
-                    totalMat += mat;
-                    totalMo += mo;
-                    return `
-                        <div class="item-card">
-                            <div class="item-name">${escapeHtml(dbI.name || i.name)}</div>
-                            <div class="item-line"><span>Cantidad</span><b>${qty} ${escapeHtml(unit)}</b></div>
-                            <div class="item-line"><span>Materiales</span><b>${this.formatCurrency(mat)}</b></div>
-                            <div class="item-line"><span>Mano de obra</span><b>${this.formatCurrency(mo)}</b></div>
-                            <div class="item-total"><span>Subtotal</span><b>${this.formatCurrency(total)}</b></div>
-                        </div>
-                    `;
-                }).join('');
+                    const category = dbI.category || i.category || 'Sin rubro';
+                    if(!grouped[category]) grouped[category] = [];
+                    grouped[category].push({ ...i, dbI });
+                });
+
+                let rows = '';
+                Object.keys(grouped).sort((a,b)=>a.localeCompare(b, 'es', {sensitivity:'base'})).forEach(category => {
+                    rows += `<tr class="category-row"><td colspan="${3 + (showMat ? 2 : 0) + (showMo ? 2 : 0) + (showSubtotal ? 1 : 0)}">${escapeHtml(category)}</td></tr>`;
+                    grouped[category].sort((a,b)=>(a.dbI.name || a.name || '').localeCompare((b.dbI.name || b.name || ''), 'es', {sensitivity:'base'})).forEach(i => {
+                        const dbI = i.dbI;
+                        const qty = Number(i.qty) || 0;
+                        const unit = dbI.unit || i.unit || '';
+                        const matUnit = (Number(dbI.matPrice) || 0) * (1 + (Number(p.mat) || 0) / 100);
+                        const moUnit = (Number(dbI.laborPrice) || 0) * (1 + (Number(p.mo) || 0) / 100);
+                        const mat = matUnit * qty;
+                        const mo = moUnit * qty;
+                        const subtotal = mode === 'MATERIALES' ? mat : (mode === 'MANO DE OBRA' ? mo : mat + mo);
+                        totalMat += mat;
+                        totalMo += mo;
+                        rows += `
+                            <tr>
+                                <td class="task">${escapeHtml(dbI.name || i.name)}</td>
+                                <td class="unit">${escapeHtml(unit)}</td>
+                                <td class="qty">${qty}</td>
+                                ${showMat ? `<td class="money muted">${this.formatCurrency(matUnit)}</td><td class="money">${this.formatCurrency(mat)}</td>` : ''}
+                                ${showMo ? `<td class="money muted">${this.formatCurrency(moUnit)}</td><td class="money">${this.formatCurrency(mo)}</td>` : ''}
+                                ${showSubtotal ? `<td class="money subtotal">${this.formatCurrency(subtotal)}</td>` : ''}
+                            </tr>
+                        `;
+                    });
+                });
 
                 const company = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Paisajismo';
-                const subtitle = this.userProfile.companySubtitle || '';
+                const subtitle = this.userProfile.companySubtitle || 'Presupuesto profesional de paisajismo';
                 const contact = this.userProfile.companyContact || '';
+                const logo = this.userProfile.companyLogo || '';
                 const fecha = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
                 const client = document.getElementById('save-client')?.value || '';
                 const address = document.getElementById('save-address')?.value || '';
+                const phone = document.getElementById('save-phone')?.value || '';
                 const notes = document.getElementById('save-notes')?.value || '';
                 const totalGeneral = totalMat + totalMo;
+                const activeTotal = mode === 'MATERIALES' ? totalMat : (mode === 'MANO DE OBRA' ? totalMo : totalGeneral);
+
+                let summaryHtml = '';
+                if(mode === 'TOTAL') {
+                    summaryHtml = `<div class="summary">
+                            <div class="summary-row"><span>Materiales</span><b>${this.formatCurrency(totalMat)}</b></div>
+                            <div class="summary-row"><span>Mano de obra</span><b>${this.formatCurrency(totalMo)}</b></div>
+                            <div class="summary-total"><span>Total General</span><b>${this.formatCurrency(totalGeneral)}</b></div>
+                        </div>`;
+                } else if(mode === 'MATERIALES') {
+                    summaryHtml = `<div class="summary"><div class="summary-total"><span>Total Materiales</span><b>${this.formatCurrency(activeTotal)}</b></div></div>`;
+                } else if(mode === 'MANO DE OBRA') {
+                    summaryHtml = `<div class="summary"><div class="summary-total"><span>Total Mano de Obra</span><b>${this.formatCurrency(activeTotal)}</b></div></div>`;
+                }
+
+                const tableHead = `
+                    <tr>
+                        <th rowspan="2" class="task">TAREA</th>
+                        <th rowspan="2" class="unit">UN.</th>
+                        <th rowspan="2" class="qty">CANT.</th>
+                        ${showMat ? `<th colspan="2">COSTO MATERIALES</th>` : ''}
+                        ${showMo ? `<th colspan="2">COSTO MANO DE OBRA</th>` : ''}
+                        ${showSubtotal ? `<th rowspan="2">SUBTOTAL</th>` : ''}
+                    </tr>
+                    <tr>
+                        ${showMat ? `<th>UNITARIO</th><th>SUBTOTAL</th>` : ''}
+                        ${showMo ? `<th>UNITARIO</th><th>SUBTOTAL</th>` : ''}
+                    </tr>
+                `;
 
                 const w = window.open('', '_blank');
-                if(!w) { this.showToast('El navegador bloqueó la ventana de impresión. Permití popups para generar el PDF vertical.'); return; }
+                if(!w) { this.showToast('El navegador bloqueó la ventana de impresión. Permití popups para generar el PDF.'); return; }
 
                 w.document.write(`
                     <!DOCTYPE html>
                     <html lang="es">
                     <head>
                         <meta charset="UTF-8">
-                        <title>Presupuesto Vertical</title>
+                        <title>${escapeHtml(modeTitle)}</title>
                         <style>
-                            @page { size: A4 portrait; margin: 12mm; }
+                            @page { size: A4 portrait; margin: 11mm; }
                             * { box-sizing: border-box; }
                             body { font-family: Arial, sans-serif; color: #0f172a; margin: 0; padding: 0; background: #fff; }
-                            .header { border-bottom: 3px solid #047857; padding-bottom: 12px; margin-bottom: 16px; }
+                            .header { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 3px solid #047857; padding-bottom: 12px; margin-bottom: 14px; }
+                            .brand-block { display:flex; align-items:center; gap:14px; min-width:0; }
+                            .logo-box { width: 78px; height: 78px; border: 1px solid #d1fae5; border-radius: 16px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#ecfdf5; flex:0 0 auto; }
+                            .logo-box img { width:100%; height:100%; object-fit:contain; padding:6px; }
+                            .logo-placeholder { font-size:30px; font-weight:900; color:#047857; }
                             .brand { font-size: 24px; font-weight: 900; color: #064e3b; line-height: 1; }
-                            .subtitle { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
-                            .meta { margin-top: 12px; font-size: 12px; color: #334155; line-height: 1.45; }
-                            .section-title { font-size: 12px; font-weight: 900; text-transform: uppercase; color: #047857; margin: 18px 0 8px; letter-spacing: .06em; }
-                            .item-card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid; }
-                            .item-name { font-size: 14px; font-weight: 900; color: #0f172a; margin-bottom: 8px; }
-                            .item-line, .item-total { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; padding: 4px 0; border-top: 1px solid #e2e8f0; }
-                            .item-line span { color: #64748b; }
-                            .item-total { margin-top: 6px; padding-top: 8px; font-size: 14px; font-weight: 900; color: #047857; border-top: 2px solid #d1fae5; }
-                            .summary { margin-top: 16px; margin-left: auto; border: 2px solid #064e3b; border-radius: 14px; padding: 14px; width: 100%; max-width: 360px; page-break-inside: avoid; }
+                            .subtitle { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; }
+                            .doc-type { text-align:right; font-size: 19px; font-weight: 900; color:#0f172a; }
+                            .date { text-align:right; font-size: 11px; color:#64748b; font-weight:700; margin-top:5px; }
+                            .meta { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; border:1px solid #dbeafe; background:#f8fafc; border-radius:14px; padding:10px 12px; margin-bottom:14px; font-size:11px; color:#334155; }
+                            .meta b { color:#0f172a; }
+                            .section-title { font-size: 11px; font-weight: 900; text-transform: uppercase; color: #047857; margin: 13px 0 7px; letter-spacing: .07em; }
+                            table { width:100%; border-collapse: collapse; table-layout: fixed; }
+                            th, td { border:1px solid #cbd5e1; padding:6px 7px; font-size:10.5px; vertical-align:top; }
+                            th { background:#e5e7eb; color:#0f172a; font-weight:900; text-align:left; }
+                            th.unit, td.unit { width:40px; text-align:center; }
+                            th.qty, td.qty { width:48px; text-align:center; }
+                            td.task { font-weight:700; color:#0f172a; }
+                            .money { text-align:right; white-space:nowrap; font-weight:800; }
+                            .muted { color:#475569; font-weight:700; }
+                            .subtotal { color:#065f46; background:#f0fdf4; }
+                            .category-row td { background:#e5e7eb; color:#0f172a; font-size:13px; font-weight:900; padding:8px; }
+                            .summary { margin-top: 14px; margin-left: auto; border: 2px solid #064e3b; border-radius: 14px; padding: 12px 14px; width: 100%; max-width: 360px; page-break-inside: avoid; }
                             .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
                             .summary-total { display: flex; justify-content: space-between; padding-top: 10px; margin-top: 8px; border-top: 2px solid #064e3b; font-size: 18px; font-weight: 900; color: #064e3b; }
-                            .notes { margin-top: 14px; font-size: 12px; color: #334155; white-space: pre-wrap; }
+                            .notes { margin-top: 12px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:12px; padding:10px; font-size:11px; color:#334155; white-space: pre-wrap; }
+                            .footer { margin-top:16px; border-top:1px solid #e2e8f0; padding-top:8px; font-size:9px; color:#94a3b8; text-align:center; }
                             @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                         </style>
                     </head>
                     <body>
                         <div class="header">
-                            <div class="brand">${escapeHtml(company)}</div>
-                            ${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ''}
-                            <div class="meta">
-                                <b>Fecha:</b> ${escapeHtml(fecha)}<br>
-                                ${client ? `<b>Cliente:</b> ${escapeHtml(client)}<br>` : ''}
-                                ${address ? `<b>Proyecto:</b> ${escapeHtml(address)}<br>` : ''}
-                                ${contact ? `<b>Contacto:</b> ${escapeHtml(contact).replace(/\n/g,'<br>')}` : ''}
+                            <div class="brand-block">
+                                <div class="logo-box">${logo ? `<img src="${logo}" alt="Logo">` : `<div class="logo-placeholder">VC</div>`}</div>
+                                <div>
+                                    <div class="brand">${escapeHtml(company)}</div>
+                                    <div class="subtitle">${escapeHtml(subtitle)}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="doc-type">${escapeHtml(modeTitle)}</div>
+                                <div class="date">${escapeHtml(fecha)}</div>
                             </div>
                         </div>
 
-                        <div class="section-title">Detalle del presupuesto</div>
-                        ${rows || '<p>No hay ítems cargados.</p>'}
-
-                        <div class="summary">
-                            <div class="summary-row"><span>Materiales</span><b>${this.formatCurrency(totalMat)}</b></div>
-                            <div class="summary-row"><span>Mano de obra</span><b>${this.formatCurrency(totalMo)}</b></div>
-                            <div class="summary-total"><span>Total General</span><b>${this.formatCurrency(totalGeneral)}</b></div>
+                        <div class="meta">
+                            <div><b>Cliente:</b> ${client ? escapeHtml(client) : '—'}</div>
+                            <div><b>Teléfono:</b> ${phone ? escapeHtml(phone) : '—'}</div>
+                            <div><b>Proyecto:</b> ${address ? escapeHtml(address) : '—'}</div>
+                            <div><b>Contacto:</b> ${contact ? escapeHtml(contact).replace(/\n/g,' · ') : '—'}</div>
                         </div>
 
+                        <div class="section-title">Detalle del presupuesto</div>
+                        <table>
+                            <thead>${tableHead}</thead>
+                            <tbody>${rows || `<tr><td colspan="8">No hay ítems cargados.</td></tr>`}</tbody>
+                        </table>
+
+                        ${summaryHtml}
+
                         ${notes ? `<div class="notes"><b>Observaciones:</b><br>${escapeHtml(notes)}</div>` : ''}
+
+                        <div class="footer">Presupuesto generado con VerdeCot</div>
                     </body>
                     </html>
                 `);
@@ -2804,35 +2877,9 @@
             },
 
             executePrint: function() {
-                ['unit','mo','mat','subtot'].forEach(k => document.body.classList.remove(`print-hide-${k}`));
-                document.body.classList.remove('print-mode-total','print-mode-materiales','print-mode-mano','print-mode-planilla');
-                const mode = this.viewMode || 'TOTAL';
-                if(mode === 'TOTAL') { document.body.classList.add('print-mode-total'); }
-                if(mode === 'MATERIALES') { document.body.classList.add('print-hide-mo','print-mode-materiales'); }
-                if(mode === 'MANO DE OBRA') { document.body.classList.add('print-hide-mat','print-mode-mano'); }
-                if(mode === 'PLANILLA') { document.body.classList.add('print-hide-mat','print-hide-mo','print-hide-subtot','print-mode-planilla'); }
-                this.renderProjectTable();
-                ['unit','mo','mat','subtot'].forEach(k => {
-                    const opt = document.getElementById(`print-opt-${k}`);
-                    if(opt && opt.checked) document.body.classList.add(`print-hide-${k}`);
-                });
-                document.getElementById('print-header-name').textContent = this.userProfile.companyName || this.userProfile.name || 'Presupuesto de Paisajismo';
-                document.getElementById('print-header-sub').textContent = this.userProfile.companySubtitle || '';
-                let contactInfo = this.userProfile.companyContact || '';
-                const client = document.getElementById('save-client')?.value;
-                if(client) contactInfo += `
-
-Cliente: ${client}`;
-                const address = document.getElementById('save-address')?.value;
-                if(address) contactInfo += `
-Proyecto: ${address}`;
-                document.getElementById('print-header-contact').textContent = contactInfo;
-                document.getElementById('print-header-date').textContent = document.getElementById('save-date')?.value || new Date().toLocaleDateString('es-AR');
-                const img = document.getElementById('print-logo-img'); if(this.userProfile.companyLogo) { img.src = this.userProfile.companyLogo; img.style.display = 'block'; } else img.style.display = 'none';
-                this.closePrintModal(); setTimeout(() => window.print(), 100);
+                this.executePrintVertical();
             }
         };
-
 
         window.addEventListener('afterprint', () => {
             document.body.classList.remove('print-mode-total','print-mode-materiales','print-mode-mano','print-mode-planilla');
