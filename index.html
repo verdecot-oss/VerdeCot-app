@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VerdeCot | Presupuestos de Paisajismo</title>
-    <!-- VerdeCot V18.8: ayuda guiada completa agregada sobre base V18.7 estable. -->
+    <!-- VerdeCot V19.1 LOGIN PAGO FIRESTORE OK: login normalizado, pago por Firestore y botón cambiar usuario. Base V18.8. -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -124,7 +124,7 @@
 
     </style>
 </head>
-<body class="text-slate-800 h-screen flex flex-col overflow-hidden selection:bg-emerald-500 selection:text-white no-select">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden selection:bg-emerald-500 selection:text-white">
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 print-hide"></div>
 
@@ -393,7 +393,7 @@
                     <div class="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-2 h-full bg-slate-800"></div>
                         <h3 class="text-2xl font-black text-slate-800 mb-2">Soy Nuevo</h3>
-                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita. <span class="block mt-1 text-[11px] font-bold text-amber-600">Acceso privado: solo usuarios autorizados.</span></p>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Crea tu cuenta profesional gratuita. <span class="block mt-1 text-[11px] font-bold text-amber-600">Acceso habilitado por pago aprobado o usuario autorizado.</span></p>
                         <div class="space-y-5">
                             <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Correo</label><input type="email" id="reg-email" autocomplete="email" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
                             <div><label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label><input type="password" id="reg-password" autocomplete="new-password" class="w-full border border-slate-300 rounded-xl px-4 py-3.5 outline-none focus:border-slate-800"></div>
@@ -565,13 +565,18 @@
                 </div>
                 
                 <div class="relative inline-block text-left">
-                    <button id="user-menu-btn" onclick="app.toggleUserMenu(event)" class="flex items-center gap-2 text-sm text-slate-700 font-bold hover:text-emerald-800 transition-all focus:outline-none py-1.5 px-3 rounded-xl hover:bg-emerald-100/50 border border-transparent hover:border-emerald-200">
-                        <div class="w-8 h-8 rounded-full bg-emerald-200/50 text-emerald-700 flex items-center justify-center text-sm shadow-inner border border-emerald-200">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-                        <span id="user-display" class="max-w-[120px] truncate hidden sm:block">Conectando...</span>
-                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200" id="user-menu-chevron"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="app.signOut()" class="hidden md:inline-flex items-center gap-2 text-xs font-black text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-2 rounded-xl transition-all" title="Cerrar sesión y usar otra cuenta">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Cambiar usuario
+                        </button>
+                        <button id="user-menu-btn" onclick="app.toggleUserMenu(event)" class="flex items-center gap-2 text-sm text-slate-700 font-bold hover:text-emerald-800 transition-all focus:outline-none py-1.5 px-3 rounded-xl hover:bg-emerald-100/50 border border-transparent hover:border-emerald-200">
+                            <div class="w-8 h-8 rounded-full bg-emerald-200/50 text-emerald-700 flex items-center justify-center text-sm shadow-inner border border-emerald-200">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <span id="user-display" class="max-w-[120px] truncate hidden sm:block">Conectando...</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200" id="user-menu-chevron"></i>
+                        </button>
+                    </div>
                     
                     <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] ring-1 ring-slate-100 z-50 divide-y divide-slate-50 origin-top-right transform transition-all overflow-hidden border border-slate-200">
                         <div class="py-2">
@@ -1264,8 +1269,11 @@
         const isAuthorizedEmail = (email) => AUTHORIZED_EMAILS.includes(normalizeEmail(email));
 
         const showAccessDeniedMessage = () => {
-            const message = 'Usuario no autorizado. VerdeCot está en acceso privado.';
+            const message = 'No encontramos un acceso activo para este usuario. Revisá el pago o usá otra cuenta.';
             try {
+                if (window.app && typeof window.app.showAuthMessage === 'function') {
+                    window.app.showAuthMessage(message, 'error');
+                }
                 if (window.app && typeof window.app.showToast === 'function') {
                     window.app.showToast(message);
                     return;
@@ -1403,7 +1411,7 @@
         ];
 
         window.app = {
-            user: null, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar', membershipStatus: 'standard', subscriptionStatus: 'inactive', subscriptionType: 'standard', subscriptionExpiresAt: null, membershipLabel: '' },
+            user: null, hasPaidAccess: false, loginInProgress: false, userProfile: { name: '', phone: '', companyName: '', companySubtitle: '', companyContact: '', companyLogo: '', role: 'estandar', membershipStatus: 'standard', subscriptionStatus: 'inactive', subscriptionType: 'standard', subscriptionExpiresAt: null, membershipLabel: '' },
             database: [], currentProject: { items: [], loadedId: null, title: '', expenses: [], profitPercent: 30, projectProfit: { mat: 0, mo: 0 }, fuelCalc: { km: 0, trips: 1, efficiency: 10, price: 2239 }, wages: [], monthlyIndex: { label: 'Mayo 2026', mat: 0, mo: 0 } }, savedBudgets: [], expandedCategories: {}, viewMode: 'TOTAL', isLoginMode: true,
 
             checkSubscriptionStatus: function(u) {
@@ -1412,14 +1420,73 @@
                 if (email === 'lugodariovidal@gmail.com') return { isTrialExpired: false, daysLeft: '∞', isAdmin: false, isVip: true, type: 'VIP Permanente' };
                 return { isTrialExpired: true, daysLeft: 0, isAdmin: false, isVip: false, type: 'No autorizado' };
             },
+        checkPaidAccess: async function(user) {
+          if (!user || !user.uid) return false;
 
+          try {
+            let paidData = null;
+
+            const paidRef = doc(db, 'usuarios', user.uid);
+            const paidSnap = await getDoc(paidRef);
+
+            if (paidSnap.exists()) {
+              paidData = paidSnap.data() || {};
+            } else if (user.email) {
+              const usersSnap = await getDocs(collection(db, 'usuarios'));
+              usersSnap.forEach((d) => {
+                const data = d.data() || {};
+                if (!paidData && normalizeEmail(data.email || '') === normalizeEmail(user.email || '')) {
+                  paidData = data;
+                }
+              });
+            }
+
+            if (!paidData) return false;
+
+            const expiresAt = paidData.accesoHasta ? new Date(paidData.accesoHasta) : null;
+            const isNotExpired = !expiresAt || expiresAt.getTime() >= Date.now();
+
+            const isPaid =
+              paidData.accesoActivo === true &&
+              paidData.pagoActivo === true &&
+              paidData.estadoPago === 'approved' &&
+              isNotExpired;
+
+            if (!isPaid) return false;
+
+            this.userProfile = {
+              ...(this.userProfile || {}),
+              role: 'vip',
+              membershipLabel: `Pago ${paidData.plan || 'mensual'}`,
+              subscriptionExpiresAt: paidData.accesoHasta || null
+            };
+
+            this.subscriptionExpiresAt = paidData.accesoHasta || null;
+            this.membershipLabel = `Pago ${paidData.plan || 'mensual'}`;
+
+            return true;
+          } catch (e) {
+            console.warn('No se pudo leer acceso pago:', e);
+            return false;
+          }
+        },
             handleUserAuthChange: async function(user) {
-                if (user && !isAuthorizedEmail(user.email)) {
+                const hasPaidAccess = await this.checkPaidAccess(user);
+                this.hasPaidAccess = hasPaidAccess;
+
+                if (user && !isAuthorizedEmail(user.email) && !hasPaidAccess) {
                     await signOut(auth);
-                    document.getElementById('auth-modal').classList.remove('hidden');
+                    this.user = null;
+                    this.hasPaidAccess = false;
+                    sessionStorage.removeItem('verdecot-login-intent');
+                    this.loginInProgress = false;
+                    this.resetLoginButton();
+                    const authModal = document.getElementById('auth-modal');
+                    if(authModal) authModal.classList.remove('hidden');
                     showAccessDeniedMessage();
                     return;
                 }
+
                 const authModal = document.getElementById('auth-modal');
                 if(authModal) authModal.classList.add('hidden');
 
@@ -1451,6 +1518,20 @@
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
+                        const loginIntent = sessionStorage.getItem('verdecot-login-intent') === '1';
+
+                        if (!loginIntent && !this.loginInProgress) {
+                            await signOut(auth);
+                            this.user = null;
+                            this.hasPaidAccess = false;
+                            this.loginInProgress = false;
+                            this.resetLoginButton();
+                            const authModal = document.getElementById('auth-modal');
+                            if(authModal) authModal.classList.remove('hidden');
+                            this.showAuthMessage('Sesión anterior cerrada. Ingresá con la cuenta que querés usar.', 'info');
+                            return;
+                        }
+
                         this.user = user;
                         await this.loadProfileData();
                         await this.handleUserAuthChange(user);
@@ -1458,6 +1539,10 @@
                         this.enterPortal();
                         window.scrollTo(0,0);
                     } else {
+                        this.user = null;
+                        this.hasPaidAccess = false;
+                        this.loginInProgress = false;
+                        this.resetLoginButton();
                         const authModal = document.getElementById('auth-modal');
                         if(authModal) authModal.classList.remove('hidden');
                     }
@@ -1466,15 +1551,41 @@
 
             toggleUserMenu: function(e) { e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('hidden'); },
             enterPortal: function() {
-                if(!this.user || !isAuthorizedEmail(this.user.email)) {
+                const allowedByEmail = this.user && isAuthorizedEmail(this.user.email);
+                const allowedByPayment = this.user && (this.hasPaidAccess || this.userProfile.role === 'vip');
+
+                if(!this.user || (!allowedByEmail && !allowedByPayment)) {
                     showAccessDeniedMessage();
                     return;
                 }
+
                 document.getElementById('auth-modal').className="hidden";
+                this.loginInProgress = false;
+                this.showToast('Acceso habilitado.');
                 this.loadDatabase(); this.loadDraftProject(); this.loadSavedBudgets(); this.navigate('computo');
             },
             formatCurrency: (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num || 0),
             getMonthlyIndexLabel: function() { const mi=this.currentProject?.monthlyIndex || {mat:0, mo:0}; const mat=Number(mi.mat)||0, mo=Number(mi.mo)||0; return `MAT ${mat>=0?'+':''}${mat}% · M.O. ${mo>=0?'+':''}${mo}%`; },
+            resetLoginButton: function() {
+                const btnLogin = document.getElementById('btn-login');
+                if(btnLogin) {
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = 'Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>';
+                }
+            },
+            showAuthMessage: function(msg, type = 'info') {
+                let box = document.getElementById('auth-message');
+                const loginBtn = document.getElementById('btn-login');
+                if(!box && loginBtn && loginBtn.parentElement) {
+                    box = document.createElement('div');
+                    box.id = 'auth-message';
+                    loginBtn.parentElement.insertBefore(box, loginBtn.nextSibling);
+                }
+                if(!box) return;
+                const isError = type === 'error';
+                box.className = `mt-3 rounded-xl px-4 py-3 text-xs font-bold leading-relaxed border ${isError ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`;
+                box.textContent = msg;
+            },
             showToast: function(msg) { const c = document.getElementById('toast-container'); if(!c) return; const t = document.createElement('div'); t.className = "bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 text-sm font-semibold flex items-center gap-3 fade-in z-50"; t.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`; c.appendChild(t); setTimeout(() => t.remove(), 3500); },
             bindAuthEvents: function() {
                 const btnLogin = document.getElementById('btn-login');
@@ -1484,11 +1595,23 @@
                     btnLogin.onclick = async () => {
                         const e = document.getElementById('login-email').value.trim();
                         const p = document.getElementById('login-password').value;
-                        if(!e || !p) { this.showToast('Completa correo y contraseña.'); return; }
-                        if(!isAuthorizedEmail(e)) { showAccessDeniedMessage(); return; }
+                        if(!e || !p) { this.showAuthMessage('Completá correo y contraseña.', 'error'); this.showToast('Completá correo y contraseña.'); return; }
 
-                        try { await signInWithEmailAndPassword(auth, e, p); }
-                        catch(err) { this.showToast('Correo o contraseña incorrectos.'); }
+                        try {
+                            this.loginInProgress = true;
+                            sessionStorage.setItem('verdecot-login-intent', '1');
+                            btnLogin.disabled = true;
+                            btnLogin.innerHTML = 'Ingresando...';
+                            await signInWithEmailAndPassword(auth, e, p);
+                        }
+                        catch(err) {
+                            this.loginInProgress = false;
+                            sessionStorage.removeItem('verdecot-login-intent');
+                            btnLogin.disabled = false;
+                            btnLogin.innerHTML = 'Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>';
+                            this.showAuthMessage('Correo o contraseña incorrectos, o el usuario no existe en Firebase Authentication.', 'error');
+                            this.showToast('Correo o contraseña incorrectos.');
+                        }
                     };
                 }
 
@@ -1496,22 +1619,36 @@
                     btnReg.onclick = async () => {
                         const e = document.getElementById('reg-email').value.trim();
                         const p = document.getElementById('reg-password').value;
-                        if(!e || !p) { this.showToast('Completa correo y contraseña para crear la cuenta.'); return; }
-                        if(!isAuthorizedEmail(e)) { showAccessDeniedMessage(); return; }
-                        if(p.length < 8) { this.showToast('La contraseña debe tener al menos 8 caracteres.'); return; }
+                        if(!e || !p) { this.showAuthMessage('Completá correo y contraseña para crear la cuenta.', 'error'); this.showToast('Completá correo y contraseña para crear la cuenta.'); return; }
+                        if(p.length < 8) { this.showAuthMessage('La contraseña debe tener al menos 8 caracteres.', 'error'); this.showToast('La contraseña debe tener al menos 8 caracteres.'); return; }
                         try {
+                            this.loginInProgress = true;
+                            sessionStorage.setItem('verdecot-login-intent', '1');
                             const userCredential = await createUserWithEmailAndPassword(auth, e, p);
                             const permanentRole = getPermanentRoleByEmail(userCredential.user.email);
                             await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), permanentRole || { role: 'estandar' }, { merge: true });
+                            this.showAuthMessage('Cuenta creada. Si el pago ya está aprobado, el acceso se habilita automáticamente.', 'info');
                             this.showToast('Cuenta creada con éxito.');
                         } catch(err) {
+                            this.loginInProgress = false;
+                            sessionStorage.removeItem('verdecot-login-intent');
+                            this.showAuthMessage('No se pudo crear la cuenta. El correo puede existir o ser inválido.', 'error');
                             this.showToast('No se pudo crear la cuenta. El correo puede existir o ser inválido.');
                         }
                     };
                 }
             },
             signInDemo: async function() { this.showToast('La demo pública está deshabilitada por seguridad. Creá una cuenta o iniciá sesión.'); },
-            signOut: function() { signOut(auth); },
+            signOut: function() {
+                sessionStorage.removeItem('verdecot-login-intent');
+                this.loginInProgress = false;
+                this.user = null;
+                this.hasPaidAccess = false;
+                signOut(auth);
+                const authModal = document.getElementById('auth-modal');
+                if(authModal) authModal.classList.remove('hidden');
+                this.showAuthMessage('Sesión cerrada. Podés ingresar con otra cuenta.', 'info');
+            },
 
             navigate: function(viewId) {
                 const content = document.getElementById('main-content'); const template = document.getElementById(`view-${viewId}`); if (!template) return;
@@ -2886,7 +3023,6 @@
             if(window.app && app.renderProjectTable) app.renderProjectTable();
         });
         window.addEventListener('DOMContentLoaded', () => app.init());
-        document.addEventListener('contextmenu', e => e.preventDefault()); document.addEventListener('keydown', e => { if(e.key==='F12' || e.keyCode===123 || (e.ctrlKey && e.shiftKey && (e.key==='I' || e.key==='J')) || (e.ctrlKey && (e.key==='U' || e.key==='C'))) { e.preventDefault(); return false; } });
     </script>
 </body>
 </html>
