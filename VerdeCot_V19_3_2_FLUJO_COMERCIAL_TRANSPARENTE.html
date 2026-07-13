@@ -2100,7 +2100,7 @@ getServiceRequestStatus: async function() {
                             this.setButtonLoading(btnReg, true, 'Creando cuenta...', 'Crear cuenta y continuar al pago');
                             const userCredential = await createUserWithEmailAndPassword(auth, e, p);
                             const permanentRole = getPermanentRoleByEmail(userCredential.user.email);
-                            await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile'), permanentRole || { role: 'estandar' }, { merge: true });
+                            await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile', 'data'), permanentRole || { role: 'estandar' }, { merge: true });
                             this.user = userCredential.user;
                             this.showAuthMessage('Cuenta creada correctamente. No vuelvas a registrarte: ahora falta completar el pago.', 'info', 'reg');
                             await this.startPaymentForUser(userCredential.user, btnReg);
@@ -2492,7 +2492,7 @@ getServiceRequestStatus: async function() {
             loadProfileData: async function() {
                 if(!this.user) return;
                 try {
-                    const profileRef = doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile');
+                    const profileRef = doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile', 'data');
                     const docSnap = await getDoc(profileRef);
                     if (docSnap.exists()) {
                         this.userProfile = { ...this.userProfile, ...docSnap.data() };
@@ -2570,7 +2570,7 @@ getServiceRequestStatus: async function() {
                     companyName: document.getElementById('prof-comp-name').value.trim(), companySubtitle: document.getElementById('prof-comp-subtitle').value.trim(), companyContact: document.getElementById('prof-comp-contact').value.trim(),
                     companyLogo: this.userProfile.companyLogo || ''
                 };
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del proyecto.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', this.user.uid, 'profile', 'data'), u, { merge: true }); this.userProfile = { ...this.userProfile, ...u }; this.showToast('Perfil actualizado. El logo saldrá en el PDF del proyecto.'); } catch(e) { this.showToast('No se pudo guardar el perfil.'); }
             },
 
             // --- DATABASE & INDICES ---
