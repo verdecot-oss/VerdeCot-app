@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VerdeCot | Presupuestos de Paisajismo</title>
     <!-- VerdeCot V19.2 FLUJO PAGO CLARO: selección de plan, registro/login transparente y redirección a Mercado Pago. Base V19.1. -->
+    <!-- CANDIDATA V19.3.4: corrige botón de login tras cuenta sin pago; base estable V19.3.3 intacta. -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -2112,6 +2113,7 @@ getServiceRequestStatus: async function() {
                 const btnLogin = document.getElementById('btn-login');
                 if(btnLogin) {
                     btnLogin.disabled = false;
+                    btnLogin.classList.remove('opacity-70', 'cursor-wait');
                     btnLogin.innerHTML = 'Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>';
                 }
             },
@@ -2140,6 +2142,10 @@ getServiceRequestStatus: async function() {
                             sessionStorage.setItem('verdecot-login-intent', '1');
                             this.setButtonLoading(btnLogin, true, 'Verificando cuenta...', 'Ingresar a VerdeCot <i class="fa-solid fa-arrow-right ml-2"></i>');
                             await signInWithEmailAndPassword(auth, e, p);
+                            // Si la misma cuenta ya estaba autenticada, Firebase puede no disparar
+                            // un nuevo onAuthStateChanged. Restauramos siempre el botón al finalizar.
+                            this.loginInProgress = false;
+                            this.resetLoginButton();
                         }
                         catch(err) {
                             this.loginInProgress = false;
